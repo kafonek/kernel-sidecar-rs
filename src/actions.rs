@@ -1,5 +1,12 @@
-use std::{fmt::Debug, sync::Arc};
+use std::{
+    fmt::Debug,
+    future::Future,
+    pin::Pin,
+    sync::Arc,
+    task::{Context, Poll, Waker},
+};
 
+use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 
 use crate::jupyter::{messages::status::KernelStatus, Request, Response};
@@ -35,74 +42,97 @@ impl From<&Response> for ExpectedReplyType {
 
 #[derive(Debug)]
 struct ActionState {
-    kernel_idle: Arc<Mutex<bool>>,
-    expected_reply_seen: Arc<Mutex<bool>>,
-    expected_reply_type: Option<ExpectedReplyType>,
+    completed: bool,
+    waker: Option<Waker>,
 }
 
 #[derive(Debug)]
 pub struct Action {
-    handlers: Vec<Box<dyn Handler>>,
-    state: ActionState,
     pub request: Request,
+    state: Arc<Mutex<ActionState>>,
 }
 
 impl Action {
-    pub fn new(request: Request, handlers: Vec<Box<dyn Handler>>) -> Self {
-        let expected_reply_type = match ExpectedReplyType::from(&request) {
-            ExpectedReplyType::None => None,
-            expected_reply_type => Some(expected_reply_type),
-        };
-        let action_state = match expected_reply_type {
-            Some(expected_reply_type) => ActionState {
-                kernel_idle: Arc::new(Mutex::new(false)),
-                expected_reply_seen: Arc::new(Mutex::new(false)),
-                expected_reply_type: Some(expected_reply_type),
-            },
-            None => ActionState {
-                kernel_idle: Arc::new(Mutex::new(false)),
-                expected_reply_seen: Arc::new(Mutex::new(true)),
-                expected_reply_type: None,
-            },
-        };
-        Action {
+    pub fn new(
+        request: Request,
+        handlers: Vec<Box<dyn Handler>>,
+        msg_rx: mpsc::Receiver<Response>,
+    ) -> Self {
+        let action_state = Arc::new(Mutex::new(ActionState {
+            completed: false,
+            waker: None,
+        }));
+        let expected_reply = ExpectedReplyType::from(&request);
+        // spawn background task for listening
+        tokio::spawn(Action::listen(
+            msg_rx,
+            expected_reply,
             handlers,
-            state: action_state,
+            action_state.clone(),
+        ));
+        Action {
             request,
+            state: action_state,
         }
     }
 
-    pub async fn handle(&self, msg: Response) {
-        for handler in &self.handlers {
-            handler.handle(&msg).await;
-        }
-        match msg {
-            Response::Status(status) => {
-                if status.content.execution_state == KernelStatus::Idle {
-                    self.set_idle_seen().await;
+    async fn listen(
+        mut msg_rx: mpsc::Receiver<Response>,
+        expected_reply: ExpectedReplyType,
+        handlers: Vec<Box<dyn Handler>>,
+        action_state: Arc<Mutex<ActionState>>,
+    ) {
+        // We "finish" this background task when kernel idle and expected reply (if relevant) seen
+        let mut kernel_idle = false;
+        let mut expected_reply_seen = match expected_reply {
+            ExpectedReplyType::KernelInfo => false,
+            ExpectedReplyType::None => true,
+        };
+        while let Some(response) = msg_rx.recv().await {
+            for handler in &handlers {
+                handler.handle(&response).await;
+            }
+            match response {
+                Response::Status(status) => {
+                    if status.content.execution_state == KernelStatus::Idle {
+                        kernel_idle = true;
+                    }
+                }
+                _ => {
+                    if expected_reply == ExpectedReplyType::from(&response) {
+                        expected_reply_seen = true;
+                    }
                 }
             }
-            _ => {
-                if self.state.expected_reply_type == Some(ExpectedReplyType::from(&msg)) {
-                    self.set_expected_reply_seen().await;
+            if kernel_idle && expected_reply_seen {
+                let mut state = action_state.lock().await;
+                state.completed = true;
+                if let Some(waker) = state.waker.take() {
+                    waker.wake();
                 }
+                break;
             }
         }
     }
+}
 
-    async fn set_idle_seen(&self) {
-        let mut kernel_idle = self.state.kernel_idle.lock().await;
-        *kernel_idle = true;
-        if *kernel_idle && *self.state.expected_reply_seen.lock().await {
-            dbg!("kernel_idle and expected_reply_seen");
-        }
-    }
+impl Future for Action {
+    type Output = ();
 
-    async fn set_expected_reply_seen(&self) {
-        let mut expected_reply_seen = self.state.expected_reply_seen.lock().await;
-        *expected_reply_seen = true;
-        if *expected_reply_seen && *self.state.kernel_idle.lock().await {
-            dbg!("kernel_idle and expected_reply_seen");
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut state = match self.state.try_lock() {
+            Ok(state) => state,
+            Err(_) => {
+                // If we can't get the lock, it means the background task is still running
+                // and we need to wait for it to complete
+                return Poll::Pending;
+            }
+        };
+        if state.completed {
+            Poll::Ready(())
+        } else {
+            state.waker = Some(cx.waker().clone());
+            Poll::Pending
         }
     }
 }

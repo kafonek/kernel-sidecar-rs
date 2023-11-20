@@ -4,6 +4,7 @@ use tokio::sync::{mpsc, Notify, RwLock};
 use zeromq::{DealerSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
 use crate::actions::{Action, Handler};
+use crate::jupyter::wire_protocol::WireProtocol;
 use crate::jupyter::{messages::kernel_info::KernelInfoRequest, Request, Response};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -38,7 +39,7 @@ impl ConnectionInfo {
 
 #[derive(Debug, Clone)]
 pub struct Client {
-    actions: Arc<RwLock<HashMap<String, Action>>>,
+    actions: Arc<RwLock<HashMap<String, mpsc::Sender<Response>>>>,
     connection_info: ConnectionInfo,
     shell_tx: mpsc::Sender<ZmqMessage>,
     shutdown_signal: Arc<Notify>,
@@ -46,7 +47,7 @@ pub struct Client {
 
 impl Client {
     pub async fn new(connection_info: ConnectionInfo) -> Self {
-        let actions: Arc<RwLock<HashMap<String, Action>>> = Arc::new(RwLock::new(HashMap::new()));
+        let actions = Arc::new(RwLock::new(HashMap::new()));
         // message passing for methods to send requests out over shell channel via shell_worker
         let (shell_tx, shell_rx) = mpsc::channel(100);
 
@@ -87,20 +88,21 @@ impl Client {
         }
     }
 
-    async fn send_request(&self, action: Action) {
-        let wire_protocol = action.request.into_wire_protocol(&self.connection_info.key);
-        let zmq_msg: ZmqMessage = wire_protocol.into();
-        self.shell_tx.send(zmq_msg).await.unwrap();
-
+    async fn send_request(&self, request: Request, handlers: Vec<Box<dyn Handler>>) -> Action {
+        let (msg_tx, msg_rx) = mpsc::channel(100);
+        let action = Action::new(request, handlers, msg_rx);
         let msg_id = action.request.msg_id();
-        self.actions.write().await.insert(msg_id, action);
+        self.actions.write().await.insert(msg_id.clone(), msg_tx);
+        let wp: WireProtocol = action.request.into_wire_protocol(&self.connection_info.key);
+        let zmq_msg: ZmqMessage = wp.into();
+        self.shell_tx.send(zmq_msg).await.unwrap();
+        action
     }
 
-    pub async fn kernel_info_request(&self, handlers: Vec<Box<dyn Handler>>) {
-        let content = KernelInfoRequest::new();
-        let request: Request = content.into();
-        let action = Action::new(request, handlers);
-        self.send_request(action).await;
+    pub async fn kernel_info_request(&self, handlers: Vec<Box<dyn Handler>>) -> Action {
+        let request = KernelInfoRequest::new();
+        let action = self.send_request(request.into(), handlers).await;
+        action
     }
 }
 
@@ -115,7 +117,7 @@ impl Drop for Client {
 /// and then delegate it to the appropriate Action to be handled based on parent msg_id.
 async fn process_message_worker(
     mut msg_rx: mpsc::Receiver<ZmqMessage>,
-    actions: Arc<RwLock<HashMap<String, Action>>>,
+    actions: Arc<RwLock<HashMap<String, mpsc::Sender<Response>>>>,
     shutdown_signal: Arc<Notify>,
 ) {
     loop {
@@ -124,8 +126,7 @@ async fn process_message_worker(
                 let response: Response = zmq_msg.into();
                 let msg_id = response.msg_id();
                 if let Some(action) = actions.read().await.get(&msg_id) {
-                    action.handle(response).await;
-                }
+                    action.send(response).await.unwrap();                }
             },
             _ = shutdown_signal.notified() => {
                 break;

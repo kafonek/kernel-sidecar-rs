@@ -19,16 +19,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let connection_info = kernel_sidecar_rs::client::ConnectionInfo::from_file("/tmp/kernel.json")?;
     let client = Client::new(connection_info).await;
 
-    // wait .1 seconds for zmq channels to connect
-    sleep(Duration::from_millis(100)).await;
-
     // send kernel_info_request
     let handler = DebugHandler {};
     let handlers = vec![Box::new(handler) as Box<dyn Handler>];
-    client.kernel_info_request(handlers).await;
-
-    //signal::ctrl_c().await.expect("Failed to listen for Ctrl-C");
-    sleep(Duration::from_millis(100)).await;
-
+    let action = client.kernel_info_request(handlers).await;
+    action.await;
     Ok(())
 }
