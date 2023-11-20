@@ -12,3 +12,11 @@ Roadmap:
  - [ ] Create example app of controlling Notebooks from external calls, e.g. AI function calling
  - [ ] Create example of integration with Carabiner GPT
  - [ ] Connect to Jupyter server to stay synced with other users via y-crdt deltas
+
+
+# Run
+
+1. Start an IPython kernel `python -m ipykernel_launcher --debug -f /tmp/kernel.json`
+2. Run `cargo main` (currently hardcoded to read in connection info from `/tmp/kernel.json`)
+
+The `main.rs` script at this time creates an `Action` for a `kernel_info_request` and awaits its completion, meaning it should run until kernel goes to idle and we see `kernel_info_reply`. A `Handler` is attached to the action to `dbg!` all messages related to the original request.
