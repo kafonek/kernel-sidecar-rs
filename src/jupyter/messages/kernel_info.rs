@@ -1,5 +1,5 @@
 use crate::jupyter::header::Header;
-use crate::jupyter::{Message, Request};
+use crate::jupyter::{message::Message, request::Request};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 

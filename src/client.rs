@@ -5,7 +5,9 @@ use zeromq::{DealerSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage
 
 use crate::actions::{Action, Handler};
 use crate::jupyter::wire_protocol::WireProtocol;
-use crate::jupyter::{messages::kernel_info::KernelInfoRequest, Request, Response};
+use crate::jupyter::{
+    messages::kernel_info::KernelInfoRequest, request::Request, response::Response,
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConnectionInfo {

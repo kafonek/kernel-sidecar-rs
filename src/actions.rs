@@ -9,7 +9,7 @@ use std::{
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 
-use crate::jupyter::{messages::status::KernelStatus, Request, Response};
+use crate::jupyter::{messages::status::KernelStatus, request::Request, response::Response};
 
 #[async_trait::async_trait]
 pub trait Handler: Debug + Send + Sync {
