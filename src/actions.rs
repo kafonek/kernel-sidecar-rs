@@ -1,14 +1,14 @@
-use std::{
-    fmt::Debug,
-    future::Future,
-    pin::Pin,
-    sync::Arc,
-    task::{Context, Poll, Waker},
-};
+use std::fmt::Debug;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::task::{Context, Poll, Waker};
 
 use tokio::sync::{mpsc, Mutex};
 
-use crate::jupyter::{messages::status::KernelStatus, request::Request, response::Response};
+use crate::jupyter::messages::status::KernelStatus;
+use crate::jupyter::request::Request;
+use crate::jupyter::response::Response;
 
 #[async_trait::async_trait]
 pub trait Handler: Debug + Send + Sync {

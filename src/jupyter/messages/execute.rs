@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::jupyter::{header::Header, message::Message, request::Request};
+use crate::jupyter::header::Header;
+use crate::jupyter::message::Message;
+use crate::jupyter::request::Request;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

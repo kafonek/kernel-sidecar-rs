@@ -1,5 +1,8 @@
-use kernel_sidecar_rs::{actions::Handler, client::Client, jupyter::response::Response};
-use std::{error::Error, fmt::Debug};
+use kernel_sidecar_rs::actions::Handler;
+use kernel_sidecar_rs::client::Client;
+use kernel_sidecar_rs::jupyter::response::Response;
+use std::error::Error;
+use std::fmt::Debug;
 
 #[derive(Debug)]
 struct DebugHandler;

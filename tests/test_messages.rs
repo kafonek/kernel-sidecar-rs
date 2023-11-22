@@ -1,14 +1,10 @@
-use std::{
-    collections::HashMap,
-    process::{Child, Command},
-    sync::Arc,
-};
+use std::collections::HashMap;
+use std::process::{Child, Command};
+use std::sync::Arc;
 
-use kernel_sidecar_rs::{
-    actions::Handler,
-    client::{Client, ConnectionInfo},
-    jupyter::response::Response,
-};
+use kernel_sidecar_rs::actions::Handler;
+use kernel_sidecar_rs::client::{Client, ConnectionInfo};
+use kernel_sidecar_rs::jupyter::response::Response;
 use tokio::sync::Mutex;
 
 #[rstest::fixture]

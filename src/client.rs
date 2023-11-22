@@ -1,15 +1,18 @@
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, error::Error, fs, net::IpAddr, path::Path, sync::Arc};
+use std::collections::HashMap;
+use std::error::Error;
+use std::fs;
+use std::net::IpAddr;
+use std::path::Path;
+use std::sync::Arc;
 use tokio::sync::{mpsc, Notify, RwLock};
 use zeromq::{DealerSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
-use crate::{
-    actions::{Action, Handler},
-    jupyter::{
-        messages::kernel_info::KernelInfoRequest, request::Request, response::Response,
-        wire_protocol::WireProtocol,
-    },
-};
+use crate::actions::{Action, Handler};
+use crate::jupyter::messages::kernel_info::KernelInfoRequest;
+use crate::jupyter::request::Request;
+use crate::jupyter::response::Response;
+use crate::jupyter::wire_protocol::WireProtocol;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConnectionInfo {
