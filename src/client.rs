@@ -103,8 +103,8 @@ impl Client {
 
     pub async fn kernel_info_request(&self, handlers: Vec<Box<dyn Handler>>) -> Action {
         let request = KernelInfoRequest::new();
-        let action = self.send_request(request.into(), handlers).await;
-        action
+        
+        self.send_request(request.into(), handlers).await
     }
 }
 

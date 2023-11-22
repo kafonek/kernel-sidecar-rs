@@ -5,8 +5,8 @@ use crate::jupyter::messages::status::Status;
 use crate::jupyter::metadata::Metadata;
 use crate::jupyter::wire_protocol::WireProtocol;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
-use zeromq::{SocketRecv, SocketSend, ZmqMessage};
+
+use zeromq::{ZmqMessage};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UnmodeledContent(serde_json::Value);

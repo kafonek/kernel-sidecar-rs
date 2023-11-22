@@ -14,7 +14,7 @@ use tokio::sync::Mutex;
 #[rstest::fixture]
 fn ipykernel_process() -> Child {
     let cmd = Command::new("python")
-        .args(&[
+        .args([
             "-m",
             "ipykernel_launcher",
             "-f",
@@ -56,7 +56,7 @@ impl Handler for MessageCountHandler {
 
 #[rstest::rstest]
 #[tokio::test]
-async fn test_kernel_info(ipykernel_process: Child) {
+async fn test_kernel_info(_ipykernel_process: Child) {
     let connection_info = ConnectionInfo::from_file("/tmp/kernel_sidecar_rs_test.json")
         .expect("Failed to read connection info from fixture");
     let client = Client::new(connection_info).await;

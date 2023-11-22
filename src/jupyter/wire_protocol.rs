@@ -55,7 +55,7 @@ impl WireProtocol {
         metadata: &Bytes,
         content: &Bytes,
     ) -> Bytes {
-        let key = hmac::Key::new(hmac::HMAC_SHA256, &key);
+        let key = hmac::Key::new(hmac::HMAC_SHA256, key);
 
         let mut ctx = hmac::Context::with_key(&key);
         ctx.update(header);

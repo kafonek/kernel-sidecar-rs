@@ -7,6 +7,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct KernelInfoRequest {}
 
+impl Default for KernelInfoRequest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl KernelInfoRequest {
     pub fn new() -> Self {
         KernelInfoRequest {}
