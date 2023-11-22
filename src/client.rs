@@ -3,10 +3,12 @@ use std::{collections::HashMap, error::Error, fs, net::IpAddr, path::Path, sync:
 use tokio::sync::{mpsc, Notify, RwLock};
 use zeromq::{DealerSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
-use crate::actions::{Action, Handler};
-use crate::jupyter::wire_protocol::WireProtocol;
-use crate::jupyter::{
-    messages::kernel_info::KernelInfoRequest, request::Request, response::Response,
+use crate::{
+    actions::{Action, Handler},
+    jupyter::{
+        messages::kernel_info::KernelInfoRequest, request::Request, response::Response,
+        wire_protocol::WireProtocol,
+    },
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -103,7 +105,7 @@ impl Client {
 
     pub async fn kernel_info_request(&self, handlers: Vec<Box<dyn Handler>>) -> Action {
         let request = KernelInfoRequest::new();
-        
+
         self.send_request(request.into(), handlers).await
     }
 }

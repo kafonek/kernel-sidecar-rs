@@ -1,5 +1,4 @@
-use crate::jupyter::header::Header;
-use crate::jupyter::metadata::Metadata;
+use crate::jupyter::{header::Header, metadata::Metadata};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

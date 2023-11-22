@@ -1,12 +1,13 @@
-use crate::jupyter::header::Header;
-use crate::jupyter::message::Message;
-use crate::jupyter::messages::kernel_info::KernelInfoReply;
-use crate::jupyter::messages::status::Status;
-use crate::jupyter::metadata::Metadata;
-use crate::jupyter::wire_protocol::WireProtocol;
+use crate::jupyter::{
+    header::Header,
+    message::Message,
+    messages::{kernel_info::KernelInfoReply, status::Status},
+    metadata::Metadata,
+    wire_protocol::WireProtocol,
+};
 use serde::{Deserialize, Serialize};
 
-use zeromq::{ZmqMessage};
+use zeromq::ZmqMessage;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UnmodeledContent(serde_json::Value);

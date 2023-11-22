@@ -6,8 +6,7 @@ use std::{
     task::{Context, Poll, Waker},
 };
 
-use tokio::sync::mpsc;
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 
 use crate::jupyter::{messages::status::KernelStatus, request::Request, response::Response};
 
