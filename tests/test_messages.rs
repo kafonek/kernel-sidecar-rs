@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::process::{Child, Command};
 use std::sync::Arc;
 
@@ -8,18 +9,24 @@ use kernel_sidecar_rs::jupyter::response::Response;
 use tokio::sync::Mutex;
 
 #[rstest::fixture]
-fn ipykernel_process() -> Child {
-    let cmd = Command::new("python")
-        .args([
-            "-m",
-            "ipykernel_launcher",
-            "-f",
-            "/tmp/kernel_sidecar_rs_test.json",
-        ])
-        .spawn()
-        .expect("Failed to start ipykernel");
-    std::thread::sleep(std::time::Duration::from_millis(100));
-    cmd
+fn ipykernel_process() -> Option<Child> {
+    if env::var("CI").is_ok() {
+        // In CI environment, don't spawn the process
+        None
+    } else {
+        // Spawn the ipykernel process
+        let cmd = Command::new("python")
+            .args([
+                "-m",
+                "ipykernel_launcher",
+                "-f",
+                "/tmp/kernel_sidecar_rs_test.json",
+            ])
+            .spawn()
+            .expect("Failed to start ipykernel");
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        Some(cmd)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -44,6 +51,10 @@ impl Handler for MessageCountHandler {
                 let count = counts.get("kernel_info").unwrap_or(&0) + 1;
                 counts.insert("kernel_info".to_string(), count);
             }
+            Response::Status(_) => {
+                let count = counts.get("status").unwrap_or(&0) + 1;
+                counts.insert("status".to_string(), count);
+            }
 
             _ => {}
         }
@@ -52,7 +63,7 @@ impl Handler for MessageCountHandler {
 
 #[rstest::rstest]
 #[tokio::test]
-async fn test_kernel_info(_ipykernel_process: Child) {
+async fn test_kernel_info(_ipykernel_process: Option<Child>) {
     let connection_info = ConnectionInfo::from_file("/tmp/kernel_sidecar_rs_test.json")
         .expect("Failed to read connection info from fixture");
     let client = Client::new(connection_info).await;
