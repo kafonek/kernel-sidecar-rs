@@ -1,3 +1,40 @@
+/*
+The Kernel Sidecar Client is the main entrypoint for connecting to a Kernel over ZMQ and issuing
+Actions (requests) to the Kernel then handling all responses with parent_header_msg id's matching
+the original request.
+
+Each Action is "complete" (awaitable) when the Kernel status has gone back to Idle and the expected
+reply type has been seen (e.g. kernel_info_reply for kernel_info_request).
+
+Message passing between background tasks is done with mpsc channels.
+ - background tasks listening to iopub and shell channels push messages to a central process_message
+   worker over mpsc.
+ - process_message background task deserializes messages and looks up the appropriate Action based
+   on parent header msg id then pushes to the Action handlers over mpsc.
+
+Example usage, run until a kernel info request/reply has been completed and print out all ZMQ
+messages coming back over iopub and shell channels:
+
+let connection_info = ConnectionInfo::from_file("/tmp/kernel.json")
+    .expect("Make sure to run python -m ipykernel_launcher -f /tmp/kernel.json");
+let client = Client::new(connection_info).await;
+
+#[derive(Debug)]
+struct DebugHandler;
+
+#[async_trait::async_trait]
+impl Handler for DebugHandler {
+    async fn handle(&self, msg: &Response) {
+        dbg!(msg);
+    }
+}
+
+let handler = DebugHandler {};
+let handlers = vec![Arc::new(handler) as Arc<dyn Handler>];
+let action = client.kernel_info_request(handlers).await;
+action.await;
+*/
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
@@ -95,6 +132,9 @@ impl Client {
         }
     }
 
+    // Creates an Action from a request + handlers, serializes the request to be sent over ZMQ,
+    // sends over shell channel, and registers the request header msg_id in the Actions hashmap
+    // so that all response messages can get routed to the appropriate Action handlers
     async fn send_request(&self, request: Request, handlers: Vec<Arc<dyn Handler>>) -> Action {
         let (msg_tx, msg_rx) = mpsc::channel(100);
         let action = Action::new(request, handlers, msg_rx);
@@ -108,8 +148,8 @@ impl Client {
 
     pub async fn kernel_info_request(&self, handlers: Vec<Arc<dyn Handler>>) -> Action {
         let request = KernelInfoRequest::new();
-
-        self.send_request(request.into(), handlers).await
+        let action = self.send_request(request.into(), handlers).await;
+        action
     }
 }
 
@@ -120,12 +160,12 @@ impl Drop for Client {
 }
 
 /// The tasks listening on iopub and shell channels will push any messages they receive into this
-/// receiver function. It's job is to deserialize ZmqMessage into the appropriate Jupyter message
+/// processing function. Its job is to deserialize ZmqMessage into the appropriate Jupyter message
 /// and then delegate it to the appropriate Action to be handled based on parent msg_id.
 async fn process_message_worker(
     mut msg_rx: mpsc::Receiver<ZmqMessage>,
     actions: Arc<RwLock<HashMap<String, mpsc::Sender<Response>>>>,
-    shutdown_signal: Arc<Notify>,
+    shutdown_signal: Arc<Notify>, // hook to shutdown background task if Client is dropped
 ) {
     loop {
         tokio::select! {
