@@ -1,6 +1,8 @@
+/*
+Ref: https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info
+*/
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-// Status comes down over iopub for all messages
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "snake_case")]

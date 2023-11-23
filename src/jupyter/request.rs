@@ -1,3 +1,11 @@
+/*
+This file is all about serializing messages going from Client to Kernel.
+
+message_content T -> Message<T> -> Request -> WireProtocol -> zeromq::ZmqMessage
+
+The impl's for message_content T -> Message<T> -> Request are in individual message_content files
+*/
+
 use crate::jupyter::message::Message;
 use crate::jupyter::message_content::execute::ExecuteRequest;
 use crate::jupyter::message_content::kernel_info::KernelInfoRequest;

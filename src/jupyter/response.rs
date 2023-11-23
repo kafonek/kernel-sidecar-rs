@@ -1,3 +1,8 @@
+/*
+This file is all about deserializing messages coming from Kernel to Client.
+
+zeromq::ZmqMessage -> WireProtocol -> Response -> Message<T> with Jupyter message content T
+*/
 use crate::jupyter::header::Header;
 use crate::jupyter::message::Message;
 use crate::jupyter::message_content::kernel_info::KernelInfoReply;

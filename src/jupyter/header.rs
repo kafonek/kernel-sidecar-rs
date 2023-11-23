@@ -1,3 +1,8 @@
+/*
+Used building Message<T>, see messge.rs.
+
+Ref: https://jupyter-client.readthedocs.io/en/latest/messaging.html#message-header
+*/
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

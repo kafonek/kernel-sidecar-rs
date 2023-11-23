@@ -1,3 +1,7 @@
+/*
+Ref: https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info
+*/
+
 use crate::jupyter::header::Header;
 use crate::jupyter::message::Message;
 use crate::jupyter::request::Request;

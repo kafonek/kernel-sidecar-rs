@@ -1,3 +1,8 @@
+/*
+Used building Message<T>, see message.rs
+
+Ref: https://jupyter-client.readthedocs.io/en/latest/messaging.html#metadata
+*/
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 
