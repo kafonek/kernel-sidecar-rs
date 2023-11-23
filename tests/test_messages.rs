@@ -59,7 +59,7 @@ async fn test_kernel_info(_ipykernel_process: Child) {
 
     // send kernel_info_request
     let handler = MessageCountHandler::new();
-    let handlers = vec![Box::new(handler.clone()) as Box<dyn Handler>];
+    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
     let action = client.kernel_info_request(handlers).await;
     action.await;
     let counts = handler.counts.lock().await;

@@ -95,7 +95,7 @@ impl Client {
         }
     }
 
-    async fn send_request(&self, request: Request, handlers: Vec<Box<dyn Handler>>) -> Action {
+    async fn send_request(&self, request: Request, handlers: Vec<Arc<dyn Handler>>) -> Action {
         let (msg_tx, msg_rx) = mpsc::channel(100);
         let action = Action::new(request, handlers, msg_rx);
         let msg_id = action.request.msg_id();
@@ -106,7 +106,7 @@ impl Client {
         action
     }
 
-    pub async fn kernel_info_request(&self, handlers: Vec<Box<dyn Handler>>) -> Action {
+    pub async fn kernel_info_request(&self, handlers: Vec<Arc<dyn Handler>>) -> Action {
         let request = KernelInfoRequest::new();
 
         self.send_request(request.into(), handlers).await

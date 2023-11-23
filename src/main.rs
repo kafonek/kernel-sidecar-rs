@@ -3,6 +3,7 @@ use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::jupyter::response::Response;
 use std::error::Error;
 use std::fmt::Debug;
+use std::sync::Arc;
 
 #[derive(Debug)]
 struct DebugHandler;
@@ -22,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // send kernel_info_request
     let handler = DebugHandler {};
-    let handlers = vec![Box::new(handler) as Box<dyn Handler>];
+    let handlers = vec![Arc::new(handler) as Arc<dyn Handler>];
     let action = client.kernel_info_request(handlers).await;
     action.await;
     Ok(())

@@ -54,7 +54,7 @@ pub struct Action {
 impl Action {
     pub fn new(
         request: Request,
-        handlers: Vec<Box<dyn Handler>>,
+        handlers: Vec<Arc<dyn Handler>>,
         msg_rx: mpsc::Receiver<Response>,
     ) -> Self {
         let action_state = Arc::new(Mutex::new(ActionState {
@@ -78,7 +78,7 @@ impl Action {
     async fn listen(
         mut msg_rx: mpsc::Receiver<Response>,
         expected_reply: ExpectedReplyType,
-        handlers: Vec<Box<dyn Handler>>,
+        handlers: Vec<Arc<dyn Handler>>,
         action_state: Arc<Mutex<ActionState>>,
     ) {
         // We "finish" this background task when kernel idle and expected reply (if relevant) seen
