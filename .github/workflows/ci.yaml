@@ -1,0 +1,60 @@
+name: Tests
+
+on: [push]
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # Set up the IPython Kernel fixture
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Install IPython Kernel
+        run: |
+          python -m pip install ipykernel
+          python -m ipykernel install --user --name=python3.10
+
+      - name: Run ipykernel
+        run: python -m ipykernel_launcher --debug -f /tmp/kernel_sidecar_rs_test.json & echo "KERNEL_PID=$!" >> $GITHUB_ENV
+
+      - name: Set up Rust 1.74.0
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain-version: '1.74.0'
+          profile: minimal
+
+      - name: Run tests
+        run: cargo test
+        env:
+          CI: true # tells our test suite to use externally started kernel instead of starting itself
+
+      - name: Stop ipykernel
+        run: kill $KERNEL_PID
+
+  lint:
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/checkout@v3
+
+        - name: Set up Rust Nightly
+          uses: actions-rust-lang/setup-rust-toolchain@v1
+          with:
+            toolchain-version: 'nightly'
+            components: rustfmt
+
+        - name: Check code format
+          run: cargo fmt -- --check
+
+        - name: Check clippy
+          run: cargo clippy -- -D warnings
+    
