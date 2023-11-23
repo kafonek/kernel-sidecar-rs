@@ -1,0 +1,26 @@
+name: Tests
+
+on: [push]
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+  steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain-version: 'nightly'
+        components: rustfmt
+
+    - name: Check code format
+      run: cargo fmt -- --check
+
+    - name: Check clippy
+      run: cargo clippy -- -D warnings
