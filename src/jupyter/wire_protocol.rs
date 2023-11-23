@@ -1,3 +1,10 @@
+/*
+Python kernel-sidecar uses the jupyter_client.py library to handle the low-level work of converting
+Jupyter Message spec into over-the-wire protocol for ZMQ. There wasn't a jupyter-client crate
+that I wanted to use here, so WireProtocol serialization and deserialization is handled here.
+
+Ref: https://jupyter-client.readthedocs.io/en/latest/messaging.html#the-wire-protocol
+*/
 use crate::jupyter::header::Header;
 use bytes::Bytes;
 use ring::hmac;
