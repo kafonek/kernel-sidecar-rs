@@ -1,6 +1,6 @@
 use crate::jupyter::message::Message;
-use crate::jupyter::messages::execute::ExecuteRequest;
-use crate::jupyter::messages::kernel_info::KernelInfoRequest;
+use crate::jupyter::message_content::execute::ExecuteRequest;
+use crate::jupyter::message_content::kernel_info::KernelInfoRequest;
 use crate::jupyter::wire_protocol::WireProtocol;
 
 #[derive(Debug)]

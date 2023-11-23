@@ -1,5 +1,5 @@
 pub mod header;
-pub mod messages;
+pub mod message_content;
 pub mod metadata;
 pub mod wire_protocol;
 

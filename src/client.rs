@@ -9,7 +9,7 @@ use tokio::sync::{mpsc, Notify, RwLock};
 use zeromq::{DealerSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
 use crate::actions::{Action, Handler};
-use crate::jupyter::messages::kernel_info::KernelInfoRequest;
+use crate::jupyter::message_content::kernel_info::KernelInfoRequest;
 use crate::jupyter::request::Request;
 use crate::jupyter::response::Response;
 use crate::jupyter::wire_protocol::WireProtocol;

@@ -1,7 +1,7 @@
 use crate::jupyter::header::Header;
 use crate::jupyter::message::Message;
-use crate::jupyter::messages::kernel_info::KernelInfoReply;
-use crate::jupyter::messages::status::Status;
+use crate::jupyter::message_content::kernel_info::KernelInfoReply;
+use crate::jupyter::message_content::status::Status;
 use crate::jupyter::metadata::Metadata;
 use crate::jupyter::wire_protocol::WireProtocol;
 use serde::{Deserialize, Serialize};
