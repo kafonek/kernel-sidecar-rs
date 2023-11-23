@@ -74,5 +74,8 @@ async fn test_kernel_info(_ipykernel_process: Option<Child>) {
     let action = client.kernel_info_request(handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
-    assert_eq!(counts.get("kernel_info"), Some(&1));
+    let mut expected = HashMap::new();
+    expected.insert("kernel_info".to_string(), 1);
+    expected.insert("status".to_string(), 2);
+    assert_eq!(*counts, expected);
 }
