@@ -46,6 +46,7 @@ use tokio::sync::{mpsc, Notify, RwLock};
 use zeromq::{DealerSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
 use crate::actions::{Action, Handler};
+use crate::jupyter::message_content::execute::ExecuteRequest;
 use crate::jupyter::message_content::kernel_info::KernelInfoRequest;
 use crate::jupyter::request::Request;
 use crate::jupyter::response::Response;
@@ -151,6 +152,12 @@ impl Client {
         let action = self.send_request(request.into(), handlers).await;
         action
     }
+
+    pub async fn execute_request(&self, code: String, handlers: Vec<Arc<dyn Handler>>) -> Action {
+        let request = ExecuteRequest::new(code);
+        let action = self.send_request(request.into(), handlers).await;
+        action
+    }
 }
 
 impl Drop for Client {
@@ -173,7 +180,20 @@ async fn process_message_worker(
                 let response: Response = zmq_msg.into();
                 let msg_id = response.msg_id();
                 if let Some(action) = actions.read().await.get(&msg_id) {
-                    action.send(response).await.unwrap();                }
+                   let sent = action.send(response).await;
+                   // If we're seeing SendError here, it means we're still seeing ZMQ messages with
+                   // parent header msg id matching a request / Action that is "completed" and has
+                   // shut down its mpsc Receiver channel. That's probably happening because the
+                   // Action is not configured to expect some Reply type and is "finishing" when
+                   // Kernel status goes Idle but then we send along another Reply messages to a
+                   // shutdown mpsc Receiver channel.
+                   match sent {
+                          Ok(_) => {},
+                          Err(e) => {
+                            dbg!(e);
+                          }
+                   }
+                }
             },
             _ = shutdown_signal.notified() => {
                 break;

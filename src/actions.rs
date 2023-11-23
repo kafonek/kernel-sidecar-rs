@@ -18,6 +18,7 @@ pub trait Handler: Debug + Send + Sync {
 #[derive(Debug, PartialEq)]
 pub enum ExpectedReplyType {
     KernelInfo,
+    ExecuteReply,
     None,
 }
 
@@ -25,6 +26,7 @@ impl From<&Request> for ExpectedReplyType {
     fn from(request: &Request) -> Self {
         match request {
             Request::KernelInfo(_) => ExpectedReplyType::KernelInfo,
+            Request::Execute(_) => ExpectedReplyType::ExecuteReply,
             _ => ExpectedReplyType::None,
         }
     }
@@ -34,6 +36,7 @@ impl From<&Response> for ExpectedReplyType {
     fn from(response: &Response) -> Self {
         match response {
             Response::KernelInfo(_) => ExpectedReplyType::KernelInfo,
+            Response::Execute(_) => ExpectedReplyType::ExecuteReply,
             _ => ExpectedReplyType::None,
         }
     }
@@ -85,6 +88,7 @@ impl Action {
         let mut kernel_idle = false;
         let mut expected_reply_seen = match expected_reply {
             ExpectedReplyType::KernelInfo => false,
+            ExpectedReplyType::ExecuteReply => false,
             ExpectedReplyType::None => true,
         };
         while let Some(response) = msg_rx.recv().await {

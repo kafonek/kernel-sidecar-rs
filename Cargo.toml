@@ -19,3 +19,4 @@ zeromq = "0.3.4"
 
 [dev-dependencies]
 rstest = "0.18.2"
+serial_test = "2.0.0"

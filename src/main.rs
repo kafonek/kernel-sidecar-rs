@@ -32,6 +32,7 @@ async fn main() {
 
     let handler = DebugHandler::new();
     let handlers = vec![Arc::new(handler) as Arc<dyn Handler>];
-    let action = client.kernel_info_request(handlers).await;
+    // let action = client.kernel_info_request(handlers).await;
+    let action = client.execute_request("2 + 2".to_owned(), handlers).await;
     action.await;
 }

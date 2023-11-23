@@ -5,6 +5,7 @@ zeromq::ZmqMessage -> WireProtocol -> Response -> Message<T> with Jupyter messag
 */
 use crate::jupyter::header::Header;
 use crate::jupyter::message::Message;
+use crate::jupyter::message_content::execute::ExecuteReply;
 use crate::jupyter::message_content::kernel_info::KernelInfoReply;
 use crate::jupyter::message_content::status::Status;
 use crate::jupyter::metadata::Metadata;
@@ -20,6 +21,7 @@ pub struct UnmodeledContent(serde_json::Value);
 pub enum Response {
     Status(Message<Status>),
     KernelInfo(Message<KernelInfoReply>),
+    Execute(Message<ExecuteReply>),
     Unmodeled(Message<UnmodeledContent>),
 }
 
@@ -29,7 +31,18 @@ impl Response {
         match self {
             Response::Status(msg) => msg.parent_header.as_ref().unwrap().msg_id.to_owned(),
             Response::KernelInfo(msg) => msg.parent_header.as_ref().unwrap().msg_id.to_owned(),
+            Response::Execute(msg) => msg.parent_header.as_ref().unwrap().msg_id.to_owned(),
             Response::Unmodeled(msg) => msg.parent_header.as_ref().unwrap().msg_id.to_owned(),
+        }
+    }
+
+    pub fn msg_type(&self) -> String {
+        // return msg_type from header
+        match self {
+            Response::Status(msg) => msg.header.msg_type.to_owned(),
+            Response::KernelInfo(msg) => msg.header.msg_type.to_owned(),
+            Response::Execute(msg) => msg.header.msg_type.to_owned(),
+            Response::Unmodeled(msg) => msg.header.msg_type.to_owned(),
         }
     }
 }
@@ -59,6 +72,16 @@ impl From<WireProtocol> for Response {
                     content,
                 };
                 Response::KernelInfo(msg)
+            }
+            "execute_reply" => {
+                let content: ExecuteReply = wp.content.into();
+                let msg: Message<ExecuteReply> = Message {
+                    header,
+                    parent_header: Some(parent_header),
+                    metadata: Some(metadata),
+                    content,
+                };
+                Response::Execute(msg)
             }
             _ => {
                 let content: UnmodeledContent = serde_json::from_slice(&wp.content)

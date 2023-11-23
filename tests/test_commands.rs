@@ -46,22 +46,14 @@ impl MessageCountHandler {
 impl Handler for MessageCountHandler {
     async fn handle(&self, msg: &Response) {
         let mut counts = self.counts.lock().await;
-        match msg {
-            Response::KernelInfo(_) => {
-                let count = counts.get("kernel_info").unwrap_or(&0) + 1;
-                counts.insert("kernel_info".to_string(), count);
-            }
-            Response::Status(_) => {
-                let count = counts.get("status").unwrap_or(&0) + 1;
-                counts.insert("status".to_string(), count);
-            }
-
-            _ => {}
-        }
+        let msg_type = msg.msg_type();
+        let count = counts.entry(msg_type).or_insert(0);
+        *count += 1;
     }
 }
 
 #[rstest::rstest]
+#[serial_test::serial]
 #[tokio::test]
 async fn test_kernel_info(_ipykernel_process: Option<Child>) {
     let connection_info = ConnectionInfo::from_file("/tmp/kernel_sidecar_rs_test.json")
@@ -75,7 +67,32 @@ async fn test_kernel_info(_ipykernel_process: Option<Child>) {
     action.await;
     let counts = handler.counts.lock().await;
     let mut expected = HashMap::new();
-    expected.insert("kernel_info".to_string(), 1);
+    expected.insert("kernel_info_reply".to_string(), 1);
     expected.insert("status".to_string(), 2);
+    assert_eq!(*counts, expected);
+}
+
+#[rstest::rstest]
+#[serial_test::serial]
+#[tokio::test]
+async fn test_execute_request(_ipykernel_process: Option<Child>) {
+    let connection_info = ConnectionInfo::from_file("/tmp/kernel_sidecar_rs_test.json")
+        .expect("Failed to read connection info from fixture");
+    let client = Client::new(connection_info).await;
+
+    // send execute_request
+    let handler = MessageCountHandler::new();
+    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
+    let action = client
+        .execute_request("print('hello')".to_string(), handlers)
+        .await;
+    action.await;
+    let counts = handler.counts.lock().await;
+    let mut expected = HashMap::new();
+    // status busy -> execute_input -> stream -> status idle & execute_reply
+    expected.insert("status".to_string(), 2);
+    expected.insert("execute_input".to_string(), 1);
+    expected.insert("stream".to_string(), 1);
+    expected.insert("execute_reply".to_string(), 1);
     assert_eq!(*counts, expected);
 }

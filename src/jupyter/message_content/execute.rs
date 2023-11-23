@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use crate::jupyter::header::Header;
 use crate::jupyter::message::Message;
 use crate::jupyter::request::Request;
+use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -42,5 +43,17 @@ impl From<ExecuteRequest> for Request {
             content: req,
         };
         Request::Execute(msg)
+    }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ExecuteReply {
+    status: String,
+    execution_count: u32,
+}
+
+impl From<Bytes> for ExecuteReply {
+    fn from(bytes: Bytes) -> Self {
+        serde_json::from_slice(&bytes).expect("Failed to deserialize ExecuteReply")
     }
 }
