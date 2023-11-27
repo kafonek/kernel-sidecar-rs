@@ -29,6 +29,7 @@ async fn main() {
     let connection_info = ConnectionInfo::from_file("/tmp/kernel.json")
         .expect("Make sure to run python -m ipykernel_launcher -f /tmp/kernel.json");
     let client = Client::new(connection_info).await;
+    client.heartbeat().await;
 
     let handler = DebugHandler::new();
     let handlers = vec![Arc::new(handler) as Arc<dyn Handler>];
