@@ -46,6 +46,7 @@ impl From<ExecuteRequest> for Request {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct ExecuteReply {
     status: String,
