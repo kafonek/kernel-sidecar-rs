@@ -143,7 +143,7 @@ impl Client {
             let mut socket = ReqSocket::new();
 
             // Try to connect to the heartbeat channel
-            if let Err(e) = socket
+            if let Err(_e) = socket
                 .connect(self.connection_info.heartbeat_address().as_str())
                 .await
             {
@@ -153,7 +153,7 @@ impl Client {
 
             // Send a ping message
             let ping_msg = ZmqMessage::from("ping");
-            if let Err(e) = socket.send(ping_msg).await {
+            if let Err(_e) = socket.send(ping_msg).await {
                 sleep(Duration::from_millis(50)).await;
                 continue; // If sending fails, retry in the next iteration of the loop
             }
