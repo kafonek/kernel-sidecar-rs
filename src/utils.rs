@@ -1,7 +1,5 @@
-use std::{
-    path::PathBuf,
-    process::{Child, Command},
-};
+use std::path::PathBuf;
+use std::process::{Child, Command};
 
 #[derive(Debug)]
 pub struct IPykernel {
@@ -9,12 +7,18 @@ pub struct IPykernel {
     pub connection_file: PathBuf,
 }
 
+impl Default for IPykernel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IPykernel {
     pub fn new() -> Self {
         // write connection file at /tmp/kernel-sidecar-{uuid}.json
         let mut file_path = std::env::temp_dir();
         file_path.push(format!("kernel-sidecar-{}.json", uuid::Uuid::new_v4()));
-        let connection_file = PathBuf::from(file_path);
+        let connection_file = file_path;
         let process = Command::new("python")
             .arg("-m")
             .arg("ipykernel_launcher")

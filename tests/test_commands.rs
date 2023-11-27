@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::env;
-use std::process::{Child, Command};
+
 use std::sync::Arc;
 
 use kernel_sidecar_rs::actions::Handler;
@@ -37,7 +36,7 @@ async fn test_kernel_info() {
     // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up
     let kernel = IPykernel::new();
     kernel.wait_for_file().await;
-    let connection_info = ConnectionInfo::from_file(&kernel.connection_file.to_str().unwrap())
+    let connection_info = ConnectionInfo::from_file(kernel.connection_file.to_str().unwrap())
         .expect("Failed to read connection info from fixture");
     let client = Client::new(connection_info).await;
     client.heartbeat().await;
@@ -59,7 +58,7 @@ async fn test_execute_request() {
     // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up
     let kernel = IPykernel::new();
     kernel.wait_for_file().await;
-    let connection_info = ConnectionInfo::from_file(&kernel.connection_file.to_str().unwrap())
+    let connection_info = ConnectionInfo::from_file(kernel.connection_file.to_str().unwrap())
         .expect("Failed to read connection info from fixture");
     let client = Client::new(connection_info).await;
     client.heartbeat().await;
