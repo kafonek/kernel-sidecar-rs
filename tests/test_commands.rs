@@ -1,33 +1,12 @@
 use std::collections::HashMap;
-use std::env;
-use std::process::{Child, Command};
+
 use std::sync::Arc;
 
 use kernel_sidecar_rs::actions::Handler;
 use kernel_sidecar_rs::client::{Client, ConnectionInfo};
 use kernel_sidecar_rs::jupyter::response::Response;
+use kernel_sidecar_rs::utils::IPykernel;
 use tokio::sync::Mutex;
-
-#[rstest::fixture]
-fn ipykernel_process() -> Option<Child> {
-    if env::var("CI").is_ok() {
-        // In CI environment, don't spawn the process
-        None
-    } else {
-        // Spawn the ipykernel process
-        let cmd = Command::new("python")
-            .args([
-                "-m",
-                "ipykernel_launcher",
-                "-f",
-                "/tmp/kernel_sidecar_rs_test.json",
-            ])
-            .spawn()
-            .expect("Failed to start ipykernel");
-        std::thread::sleep(std::time::Duration::from_millis(100));
-        Some(cmd)
-    }
-}
 
 #[derive(Debug, Clone)]
 struct MessageCountHandler {
@@ -52,13 +31,15 @@ impl Handler for MessageCountHandler {
     }
 }
 
-#[rstest::rstest]
-#[serial_test::serial]
 #[tokio::test]
-async fn test_kernel_info(_ipykernel_process: Option<Child>) {
-    let connection_info = ConnectionInfo::from_file("/tmp/kernel_sidecar_rs_test.json")
+async fn test_kernel_info() {
+    // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up
+    let kernel = IPykernel::new();
+    kernel.wait_for_file().await;
+    let connection_info = ConnectionInfo::from_file(kernel.connection_file.to_str().unwrap())
         .expect("Failed to read connection info from fixture");
     let client = Client::new(connection_info).await;
+    client.heartbeat().await;
 
     // send kernel_info_request
     let handler = MessageCountHandler::new();
@@ -72,13 +53,15 @@ async fn test_kernel_info(_ipykernel_process: Option<Child>) {
     assert_eq!(*counts, expected);
 }
 
-#[rstest::rstest]
-#[serial_test::serial]
 #[tokio::test]
-async fn test_execute_request(_ipykernel_process: Option<Child>) {
-    let connection_info = ConnectionInfo::from_file("/tmp/kernel_sidecar_rs_test.json")
+async fn test_execute_request() {
+    // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up
+    let kernel = IPykernel::new();
+    kernel.wait_for_file().await;
+    let connection_info = ConnectionInfo::from_file(kernel.connection_file.to_str().unwrap())
         .expect("Failed to read connection info from fixture");
     let client = Client::new(connection_info).await;
+    client.heartbeat().await;
 
     // send execute_request
     let handler = MessageCountHandler::new();
