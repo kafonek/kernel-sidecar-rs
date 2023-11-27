@@ -23,7 +23,9 @@ pub struct Message<T> {
 
 impl<T> Message<T> {
     pub fn parent_msg_id(&self) -> Option<String> {
-        self.parent_header.as_ref().map(|header| header.msg_id.to_owned())
+        self.parent_header
+            .as_ref()
+            .map(|header| header.msg_id.to_owned())
     }
 
     pub fn msg_type(&self) -> String {
