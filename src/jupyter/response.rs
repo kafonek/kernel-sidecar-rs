@@ -61,7 +61,7 @@ impl From<WireProtocol> for Response {
                 let content: Status = wp.content.into();
                 let msg: Message<Status> = Message {
                     header,
-                    parent_header: parent_header,
+                    parent_header,
                     metadata: Some(metadata),
                     content,
                 };
@@ -71,7 +71,7 @@ impl From<WireProtocol> for Response {
                 let content: KernelInfoReply = wp.content.into();
                 let msg: Message<KernelInfoReply> = Message {
                     header,
-                    parent_header: parent_header,
+                    parent_header,
                     metadata: Some(metadata),
                     content,
                 };
@@ -81,7 +81,7 @@ impl From<WireProtocol> for Response {
                 let content: ExecuteReply = wp.content.into();
                 let msg: Message<ExecuteReply> = Message {
                     header,
-                    parent_header: parent_header,
+                    parent_header,
                     metadata: Some(metadata),
                     content,
                 };
@@ -92,7 +92,7 @@ impl From<WireProtocol> for Response {
                     .expect("Error deserializing unmodeled content");
                 let msg: Message<UnmodeledContent> = Message {
                     header,
-                    parent_header: parent_header,
+                    parent_header,
                     metadata: Some(metadata),
                     content,
                 };
