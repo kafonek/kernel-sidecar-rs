@@ -27,7 +27,6 @@ impl From<&Request> for ExpectedReplyType {
         match request {
             Request::KernelInfo(_) => ExpectedReplyType::KernelInfo,
             Request::Execute(_) => ExpectedReplyType::ExecuteReply,
-            _ => ExpectedReplyType::None,
         }
     }
 }
