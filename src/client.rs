@@ -149,13 +149,13 @@ impl Client {
 
     pub async fn kernel_info_request(&self, handlers: Vec<Arc<dyn Handler>>) -> Action {
         let request = KernelInfoRequest::new();
-        
+
         self.send_request(request.into(), handlers).await
     }
 
     pub async fn execute_request(&self, code: String, handlers: Vec<Arc<dyn Handler>>) -> Action {
         let request = ExecuteRequest::new(code);
-        
+
         self.send_request(request.into(), handlers).await
     }
 }
