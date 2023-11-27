@@ -5,6 +5,7 @@ that I wanted to use here, so WireProtocol serialization and deserialization is 
 
 Ref: https://jupyter-client.readthedocs.io/en/latest/messaging.html#the-wire-protocol
 */
+use crate::jupyter::constants::EMPTY_DICT_BYTES;
 use crate::jupyter::header::Header;
 use bytes::Bytes;
 use ring::hmac;
@@ -22,19 +23,13 @@ pub struct WireProtocol {
     pub content: Bytes,
 }
 
-fn empty_dict_as_bytes() -> Bytes {
-    let empty_dict = serde_json::json!({});
-    let empty_dict = serde_json::to_vec(&empty_dict).unwrap();
-    Bytes::from(empty_dict)
-}
-
 impl WireProtocol {
     pub fn new<T: Serialize>(header: Header, content: T, hmac_signing_key: &str) -> Self {
         // Serialize header to JSON then bytes
         let header = Bytes::from(serde_json::to_vec(&header).expect("Failed to serialize header"));
         // Make parent_header and metadata both empty dicts serialized to json and then bytes
-        let parent_header = empty_dict_as_bytes();
-        let metadata = empty_dict_as_bytes();
+        let parent_header = EMPTY_DICT_BYTES.clone();
+        let metadata = EMPTY_DICT_BYTES.clone();
 
         // If content is passed in, serialize and turn into bytes. Otherwise same as parent_header
         let content =
