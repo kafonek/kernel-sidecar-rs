@@ -30,9 +30,10 @@ async fn main() {
         .expect("Make sure to run python -m ipykernel_launcher -f /tmp/kernel.json");
     let client = Client::new(connection_info).await;
 
-    let handler = DebugHandler::new();
-    let handlers = vec![Arc::new(handler) as Arc<dyn Handler>];
-    // let action = client.kernel_info_request(handlers).await;
-    let action = client.execute_request("2 + 2".to_owned(), handlers).await;
-    action.await;
+    // let handler = DebugHandler::new();
+    // let handlers = vec![Arc::new(handler) as Arc<dyn Handler>];
+    // // let action = client.kernel_info_request(handlers).await;
+    // let action = client.execute_request("2 + 2".to_owned(), handlers).await;
+    // action.await;
+    client.heartbeat().await;
 }

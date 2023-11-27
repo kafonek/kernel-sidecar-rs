@@ -36,14 +36,17 @@ action.await;
 */
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::net::IpAddr;
 use std::path::Path;
 use std::sync::Arc;
-use tokio::sync::{mpsc, Notify, RwLock};
-use zeromq::{DealerSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
+use std::{collections::HashMap, time::Duration};
+use tokio::{
+    sync::{mpsc, Notify, RwLock},
+    time::sleep,
+};
+use zeromq::{DealerSocket, ReqSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
 use crate::actions::{Action, Handler};
 use crate::jupyter::message_content::execute::ExecuteRequest;
@@ -133,6 +136,41 @@ impl Client {
         }
     }
 
+    // Try to connect to the heartbeat channel and send a ping message
+    // You can use this as a way to wait for a new Kernel to come up or check if it's connected
+    pub async fn heartbeat(&self) {
+        loop {
+            let mut socket = ReqSocket::new();
+
+            // Try to connect to the heartbeat channel
+            if let Err(e) = socket
+                .connect(self.connection_info.heartbeat_address().as_str())
+                .await
+            {
+                sleep(Duration::from_millis(50)).await;
+                continue; // If connection fails, retry in the next iteration of the loop
+            }
+
+            // Send a ping message
+            let ping_msg = ZmqMessage::from("ping");
+            if let Err(e) = socket.send(ping_msg).await {
+                sleep(Duration::from_millis(50)).await;
+                continue; // If sending fails, retry in the next iteration of the loop
+            }
+
+            // Wait for a pong message
+            match socket.recv().await {
+                Ok(_) => {
+                    break; // Successful pong message received, break the loop
+                }
+                Err(_) => {
+                    sleep(Duration::from_millis(50)).await;
+                    continue; // If receiving fails, retry in the next iteration of the loop
+                }
+            }
+        }
+    }
+
     // Creates an Action from a request + handlers, serializes the request to be sent over ZMQ,
     // sends over shell channel, and registers the request header msg_id in the Actions hashmap
     // so that all response messages can get routed to the appropriate Action handlers
@@ -149,13 +187,11 @@ impl Client {
 
     pub async fn kernel_info_request(&self, handlers: Vec<Arc<dyn Handler>>) -> Action {
         let request = KernelInfoRequest::new();
-
         self.send_request(request.into(), handlers).await
     }
 
     pub async fn execute_request(&self, code: String, handlers: Vec<Arc<dyn Handler>>) -> Action {
         let request = ExecuteRequest::new(code);
-
         self.send_request(request.into(), handlers).await
     }
 }
