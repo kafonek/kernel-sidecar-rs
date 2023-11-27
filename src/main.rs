@@ -1,7 +1,8 @@
 use kernel_sidecar_rs::actions::Handler;
 use kernel_sidecar_rs::client::{Client, ConnectionInfo};
 use kernel_sidecar_rs::jupyter::response::Response;
-use std::{fmt::Debug, sync::Arc};
+use std::fmt::Debug;
+use std::sync::Arc;
 
 #[derive(Debug)]
 struct DebugHandler;
