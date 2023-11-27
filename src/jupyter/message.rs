@@ -20,3 +20,16 @@ pub struct Message<T> {
     pub metadata: Option<Metadata>,
     pub content: T,
 }
+
+impl<T> Message<T> {
+    pub fn parent_msg_id(&self) -> Option<String> {
+        match &self.parent_header {
+            Some(header) => Some(header.msg_id.to_owned()),
+            None => None,
+        }
+    }
+
+    pub fn msg_type(&self) -> String {
+        self.header.msg_type.to_owned()
+    }
+}

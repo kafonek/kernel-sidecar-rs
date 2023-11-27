@@ -178,7 +178,12 @@ async fn process_message_worker(
         tokio::select! {
             Some(zmq_msg) = msg_rx.recv() => {
                 let response: Response = zmq_msg.into();
-                let msg_id = response.msg_id();
+                let msg_id = response.parent_msg_id();
+                if msg_id.is_none() {
+                    dbg!("No parent msg id, skipping msg_type {}", response.msg_type());
+                    continue;
+                }
+                let msg_id = msg_id.unwrap();
                 if let Some(action) = actions.read().await.get(&msg_id) {
                    let sent = action.send(response).await;
                    // If we're seeing SendError here, it means we're still seeing ZMQ messages with

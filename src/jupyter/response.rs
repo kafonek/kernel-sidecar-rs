@@ -3,6 +3,7 @@ This file is all about deserializing messages coming from Kernel to Client.
 
 zeromq::ZmqMessage -> WireProtocol -> Response -> Message<T> with Jupyter message content T
 */
+use crate::jupyter::constants::EMPTY_DICT_BYTES;
 use crate::jupyter::header::Header;
 use crate::jupyter::message::Message;
 use crate::jupyter::message_content::execute::ExecuteReply;
@@ -26,13 +27,13 @@ pub enum Response {
 }
 
 impl Response {
-    pub fn msg_id(&self) -> String {
-        // return msg_id from parent header
+    pub fn parent_msg_id(&self) -> Option<String> {
+        // return parent_msg_id from header
         match self {
-            Response::Status(msg) => msg.parent_header.as_ref().unwrap().msg_id.to_owned(),
-            Response::KernelInfo(msg) => msg.parent_header.as_ref().unwrap().msg_id.to_owned(),
-            Response::Execute(msg) => msg.parent_header.as_ref().unwrap().msg_id.to_owned(),
-            Response::Unmodeled(msg) => msg.parent_header.as_ref().unwrap().msg_id.to_owned(),
+            Response::Status(msg) => msg.parent_msg_id(),
+            Response::KernelInfo(msg) => msg.parent_msg_id(),
+            Response::Execute(msg) => msg.parent_msg_id(),
+            Response::Unmodeled(msg) => msg.parent_msg_id(),
         }
     }
 
@@ -50,14 +51,17 @@ impl Response {
 impl From<WireProtocol> for Response {
     fn from(wp: WireProtocol) -> Self {
         let header: Header = wp.header.into();
-        let parent_header: Header = wp.parent_header.into();
+        let parent_header = match wp.parent_header == EMPTY_DICT_BYTES.clone() {
+            true => None,
+            false => Some(wp.parent_header.into()),
+        };
         let metadata: Metadata = wp.metadata.into();
         match header.msg_type.as_str() {
             "status" => {
                 let content: Status = wp.content.into();
                 let msg: Message<Status> = Message {
                     header,
-                    parent_header: Some(parent_header),
+                    parent_header: parent_header,
                     metadata: Some(metadata),
                     content,
                 };
@@ -67,7 +71,7 @@ impl From<WireProtocol> for Response {
                 let content: KernelInfoReply = wp.content.into();
                 let msg: Message<KernelInfoReply> = Message {
                     header,
-                    parent_header: Some(parent_header),
+                    parent_header: parent_header,
                     metadata: Some(metadata),
                     content,
                 };
@@ -77,7 +81,7 @@ impl From<WireProtocol> for Response {
                 let content: ExecuteReply = wp.content.into();
                 let msg: Message<ExecuteReply> = Message {
                     header,
-                    parent_header: Some(parent_header),
+                    parent_header: parent_header,
                     metadata: Some(metadata),
                     content,
                 };
@@ -88,7 +92,7 @@ impl From<WireProtocol> for Response {
                     .expect("Error deserializing unmodeled content");
                 let msg: Message<UnmodeledContent> = Message {
                     header,
-                    parent_header: Some(parent_header),
+                    parent_header: parent_header,
                     metadata: Some(metadata),
                     content,
                 };
