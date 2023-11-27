@@ -1,8 +1,7 @@
 use kernel_sidecar_rs::actions::Handler;
 use kernel_sidecar_rs::client::{Client, ConnectionInfo};
 use kernel_sidecar_rs::jupyter::response::Response;
-use std::fmt::Debug;
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
 #[derive(Debug)]
 struct DebugHandler;
@@ -29,11 +28,11 @@ async fn main() {
     let connection_info = ConnectionInfo::from_file("/tmp/kernel.json")
         .expect("Make sure to run python -m ipykernel_launcher -f /tmp/kernel.json");
     let client = Client::new(connection_info).await;
-
-    // let handler = DebugHandler::new();
-    // let handlers = vec![Arc::new(handler) as Arc<dyn Handler>];
-    // // let action = client.kernel_info_request(handlers).await;
-    // let action = client.execute_request("2 + 2".to_owned(), handlers).await;
-    // action.await;
     client.heartbeat().await;
+
+    let handler = DebugHandler::new();
+    let handlers = vec![Arc::new(handler) as Arc<dyn Handler>];
+    // let action = client.kernel_info_request(handlers).await;
+    let action = client.execute_request("2 + 2".to_owned(), handlers).await;
+    action.await;
 }
