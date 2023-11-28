@@ -6,21 +6,30 @@ use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
 use kernel_sidecar_rs::utils::JupyterKernel;
 
-async fn start_evcxr() -> (JupyterKernel, Client) {
-    // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up
-    let kernel = JupyterKernel::evcxr(true); // true / false is for silencing stdout
+// Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
+async fn start_kernel() -> (JupyterKernel, Client) {
+    let silent = true;
+    let kernel: JupyterKernel;
+    if cfg!(feature = "test_evcxr") {
+        kernel = JupyterKernel::evcxr(silent);
+    } else {
+        kernel = JupyterKernel::ipython(silent);
+    }
     let client = Client::new(kernel.connection_info.clone()).await;
     client.heartbeat().await;
-    // Anecdotally, tests pass fine on local but fail on CI where it's missing status and
-    // execute_input, whicih both come out over iopub. Similar to the ipython tests, seems like
-    // heartbeat and shell are spinning up faster than iopub and we're missing messages there?
+    // Anecdotally, have noticed tests fail becaues Status messages aren't showing up as expected.
+    // Theory is that heartbeat is returning but iopub isn't pushing out messages even though
+    // shell is connected and accepting request / replies?
+    // Could be totally wrong.
+    // Separately, there may be an edge case where multiple JupyterKernel::ipython calls end up
+    // with the same ports and it all blows up. TODO: fix that.
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
     (kernel, client)
 }
 
 #[tokio::test]
 async fn test_kernel_info() {
-    let (_kernel, client) = start_evcxr().await;
+    let (_kernel, client) = start_kernel().await;
 
     // send kernel_info_request
     let handler = MessageCountHandler::new();
@@ -36,22 +45,19 @@ async fn test_kernel_info() {
 
 #[tokio::test]
 async fn test_execute_request() {
-    let (_kernel, client) = start_evcxr().await;
+    let (_kernel, client) = start_kernel().await;
 
     // send execute_request
     let handler = MessageCountHandler::new();
+
     let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
-    let action = client
-        .execute_request("println!(\"hello world\")".to_string(), handlers)
-        .await;
+    let action = client.execute_request("2 + 2".to_string(), handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
     let mut expected = HashMap::new();
     // status busy -> execute_input -> stream -> status idle & execute_reply
-    // evcxr throws in an extra execute_result that ipython doesn't with a print statement
     expected.insert("status".to_string(), 2);
     expected.insert("execute_input".to_string(), 1);
-    expected.insert("stream".to_string(), 1);
     expected.insert("execute_result".to_string(), 1);
     expected.insert("execute_reply".to_string(), 1);
     assert_eq!(*counts, expected);

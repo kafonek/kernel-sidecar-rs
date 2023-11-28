@@ -29,7 +29,7 @@ jobs:
           toolchain: '1.74.0'
 
       - name: Run tests
-        run: cargo test --test test_ipython
+        run: cargo test 
 
   test-evcxr:
     runs-on: ubuntu-latest
@@ -55,7 +55,7 @@ jobs:
           evcxr_jupyter --install
 
       - name: Run tests
-        run: cargo test --test test_evcxr
+        run: cargo test --features test_evcxr
 
 
   lint:
