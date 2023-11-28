@@ -11,6 +11,8 @@ async fn start_kernel() -> (JupyterKernel, Client) {
         JupyterKernel::evcxr(silent)
     } else if cfg!(feature = "test_irkernel") {
         JupyterKernel::irkernel(silent)
+    } else if cfg!(feature = "test_deno") {
+        JupyterKernel::deno(silent)
     } else {
         JupyterKernel::ipython(silent)
     };
