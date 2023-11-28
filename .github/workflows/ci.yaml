@@ -44,6 +44,14 @@ jobs:
           toolchain-version: '1.74.0'
           profile: minimal
 
+      # Cache Evcxr installation
+      - name: Cache Evcxr installation
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin
+          key: ${{ runner.os }}-evcxr-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Install evcxr-jupyter
         run: |
           cargo install evcxr_jupyter
