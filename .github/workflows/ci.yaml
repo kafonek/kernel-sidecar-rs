@@ -7,7 +7,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  test-ipython:
     runs-on: ubuntu-latest
 
     steps:
@@ -30,9 +30,27 @@ jobs:
           profile: minimal
 
       - name: Run tests
-        run: cargo test
-        env:
-          CI: true # tells our test suite to use externally started kernel instead of starting itself
+        run: cargo test --test test_ipython
+
+  test-evcxr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Rust 1.74.0
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain-version: '1.74.0'
+          profile: minimal
+
+      - name: Install evcxr-jupyter
+        run: |
+          cargo install evcxr_jupyter
+          evcxr_jupyter --install
+
+      - name: Run tests
+        run: cargo test --test test_evcxr
 
 
   lint:
