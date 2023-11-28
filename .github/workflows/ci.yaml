@@ -26,7 +26,7 @@ jobs:
       - name: Set up Rust 1.74.0
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain-version: '1.74.0'
+          toolchain: '1.74.0'
           profile: minimal
 
       - name: Run tests
@@ -41,15 +41,14 @@ jobs:
       - name: Set up Rust 1.74.0
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain-version: '1.74.0'
+          toolchain: '1.74.0'
           profile: minimal
 
       # Cache Evcxr installation
       - name: Cache Evcxr installation
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
-          path: |
-            ~/.cargo/bin
+          path: ~/.cargo/bin
           key: ${{ runner.os }}-evcxr-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install evcxr-jupyter
@@ -70,7 +69,7 @@ jobs:
         - name: Set up Rust Nightly
           uses: actions-rust-lang/setup-rust-toolchain@v1
           with:
-            toolchain-version: 'nightly'
+            toolchain: 'nightly'
             components: rustfmt
 
         - name: Check code format
