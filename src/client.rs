@@ -47,42 +47,13 @@ use tokio::sync::{mpsc, Notify, RwLock};
 use tokio::time::sleep;
 use zeromq::{DealerSocket, ReqSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
-use crate::actions::{Action, Handler};
+use crate::handlers::Handler;
 use crate::jupyter::message_content::execute::ExecuteRequest;
 use crate::jupyter::message_content::kernel_info::KernelInfoRequest;
 use crate::jupyter::request::Request;
 use crate::jupyter::response::Response;
 use crate::jupyter::wire_protocol::WireProtocol;
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ConnectionInfo {
-    ip: IpAddr,
-    transport: String,
-    iopub_port: u16,
-    shell_port: u16,
-    hb_port: u16,
-    key: String, // hmac signing key
-}
-
-impl ConnectionInfo {
-    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn Error>> {
-        let file_contents = fs::read_to_string(path)?;
-        let connection_info: Self = serde_json::from_str(&file_contents)?;
-        Ok(connection_info)
-    }
-
-    pub fn iopub_address(&self) -> String {
-        format!("{}://{}:{}", self.transport, self.ip, self.iopub_port)
-    }
-
-    pub fn shell_address(&self) -> String {
-        format!("{}://{}:{}", self.transport, self.ip, self.shell_port)
-    }
-
-    pub fn heartbeat_address(&self) -> String {
-        format!("{}://{}:{}", self.transport, self.ip, self.hb_port)
-    }
-}
+use crate::{actions::Action, jupyter::connection_file::ConnectionInfo};
 
 #[derive(Debug, Clone)]
 pub struct Client {
