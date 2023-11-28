@@ -11,6 +11,10 @@ async fn start_evcxr() -> (JupyterKernel, Client) {
     let kernel = JupyterKernel::evcxr(true); // true / false is for silencing stdout
     let client = Client::new(kernel.connection_info.clone()).await;
     client.heartbeat().await;
+    // Anecdotally, tests pass fine on local but fail on CI where it's missing status and
+    // execute_input, whicih both come out over iopub. Similar to the ipython tests, seems like
+    // heartbeat and shell are spinning up faster than iopub and we're missing messages there?
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
     (kernel, client)
 }
 
