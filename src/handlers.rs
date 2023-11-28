@@ -1,7 +1,9 @@
 use tokio::sync::Mutex;
 
 use crate::jupyter::response::Response;
-use std::{collections::HashMap, fmt::Debug, sync::Arc};
+use std::collections::HashMap;
+use std::fmt::Debug;
+use std::sync::Arc;
 
 #[async_trait::async_trait]
 pub trait Handler: Debug + Send + Sync {
@@ -11,6 +13,12 @@ pub trait Handler: Debug + Send + Sync {
 // dbg!'s all messages handled by an Action
 #[derive(Debug)]
 pub struct DebugHandler;
+
+impl Default for DebugHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl DebugHandler {
     pub fn new() -> Self {
@@ -29,6 +37,12 @@ impl Handler for DebugHandler {
 #[derive(Debug, Clone)]
 pub struct MessageCountHandler {
     pub counts: Arc<Mutex<HashMap<String, usize>>>,
+}
+
+impl Default for MessageCountHandler {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MessageCountHandler {

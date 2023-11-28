@@ -1,12 +1,11 @@
-use rand::{distributions::Alphanumeric, Rng};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use std::fs::{self, File};
 use std::io::{self, Write};
 use std::net::TcpListener;
 use std::path::Path;
-use std::{
-    collections::HashSet,
-    fs::{self, File},
-};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConnectionInfo {

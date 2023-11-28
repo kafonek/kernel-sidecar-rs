@@ -35,25 +35,22 @@ let action = client.kernel_info_request(handlers).await;
 action.await;
 */
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::error::Error;
-use std::fs;
-use std::net::IpAddr;
-use std::path::Path;
+
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{mpsc, Notify, RwLock};
 use tokio::time::sleep;
 use zeromq::{DealerSocket, ReqSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
+use crate::actions::Action;
 use crate::handlers::Handler;
+use crate::jupyter::connection_file::ConnectionInfo;
 use crate::jupyter::message_content::execute::ExecuteRequest;
 use crate::jupyter::message_content::kernel_info::KernelInfoRequest;
 use crate::jupyter::request::Request;
 use crate::jupyter::response::Response;
 use crate::jupyter::wire_protocol::WireProtocol;
-use crate::{actions::Action, jupyter::connection_file::ConnectionInfo};
 
 #[derive(Debug, Clone)]
 pub struct Client {

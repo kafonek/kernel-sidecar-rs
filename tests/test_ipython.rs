@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use std::sync::Arc;
 
+use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
 use kernel_sidecar_rs::utils::JupyterKernel;
-use kernel_sidecar_rs::{client::Client, handlers::DebugHandler};
 
 async fn start_ipykernel() -> (JupyterKernel, Client) {
     // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up

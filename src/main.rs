@@ -1,6 +1,6 @@
+use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{DebugHandler, Handler};
 use kernel_sidecar_rs::utils::JupyterKernel;
-use kernel_sidecar_rs::{client::Client, jupyter::connection_file::ConnectionInfo};
 
 use std::sync::Arc;
 
