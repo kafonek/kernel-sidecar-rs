@@ -72,7 +72,7 @@ jobs:
       - name: Cache R packages
         uses: actions/cache@v3
         with:
-          path: ${{ runner.workspace }}/Library
+          path: ${{ env.R_LIBS_USER }}
           key: R-packages-${{ runner.os }}
 
       - name: Install IRkernel
