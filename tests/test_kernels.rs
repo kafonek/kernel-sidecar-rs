@@ -4,13 +4,15 @@ use std::sync::Arc;
 
 use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
-use kernel_sidecar_rs::utils::JupyterKernel;
+use kernel_sidecar_rs::kernels::JupyterKernel;
 
 // Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
 async fn start_kernel() -> (JupyterKernel, Client) {
     let silent = true;
     let kernel = if cfg!(feature = "test_evcxr") {
         JupyterKernel::evcxr(silent)
+    } else if cfg!(feature = "test_irkernel") {
+        JupyterKernel::irkernel(silent)
     } else {
         JupyterKernel::ipython(silent)
     };

@@ -22,3 +22,4 @@ zeromq = "0.3.4"
 [features]
 # Feature flags for starting different types of Kernels in the test suite
 test_evcxr = []
+test_irkernel = []

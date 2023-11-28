@@ -57,6 +57,27 @@ jobs:
       - name: Run tests
         run: cargo test --features test_evcxr
 
+  test-irkernel:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up R (release)
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Install IRkernel
+        run: Rscript -e 'install.packages("IRkernel")'
+
+      - name: Set up Rust 1.74.0
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: '1.74.0'
+
+      - name: Run tests
+        run: cargo test --features test_irkernel
+
+
 
   lint:
       runs-on: ubuntu-latest

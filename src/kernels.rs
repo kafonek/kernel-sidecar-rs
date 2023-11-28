@@ -22,7 +22,7 @@ impl JupyterKernel {
             .expect("Failed to start Jupyter Kernel")
     }
 
-    // start an ipykernel process. If set to silent, stdout redirects to /dev/null
+    // start a Python (ipykernel) kernel
     pub fn ipython(silent: bool) -> Self {
         let kernel_name = "ipykernel".to_string();
         let connection_info = ConnectionInfo::new(Some(kernel_name)).unwrap();
@@ -42,7 +42,7 @@ impl JupyterKernel {
         }
     }
 
-    // start a Rust (evcxr) kernel.
+    // start a Rust (evcxr) kernel
     pub fn evcxr(silent: bool) -> Self {
         let kernel_name = "evcxr".to_string();
         let connection_info = ConnectionInfo::new(Some(kernel_name)).unwrap();
@@ -51,6 +51,27 @@ impl JupyterKernel {
             "evcxr_jupyter",
             "--control_file",
             file_path.to_str().unwrap(),
+        ];
+        let process = Self::start_process(cmd, silent);
+        Self {
+            process,
+            connection_info,
+            connection_file: file_path,
+        }
+    }
+
+    // Start an R (irkernel) kernel
+    pub fn irkernel(silent: bool) -> Self {
+        let kernel_name = "ir".to_string();
+        let connection_info = ConnectionInfo::new(Some(kernel_name)).unwrap();
+        let file_path = connection_info.to_temp_file().unwrap();
+        let conn_file_args = format!("--connection-file={}", file_path.to_str().unwrap());
+        let cmd = vec![
+            "R",
+            "-e",
+            "IRkernel::main()",
+            "--args",
+            conn_file_args.as_str(),
         ];
         let process = Self::start_process(cmd, silent);
         Self {
