@@ -1,3 +1,6 @@
+/*
+https://jupyter-client.readthedocs.io/en/latest/messaging.html#streams-stdout-stderr-etc
+*/
 use bytes::Bytes;
 use serde::Deserialize;
 
