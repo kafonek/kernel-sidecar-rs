@@ -72,10 +72,8 @@ jobs:
       - name: Cache R packages
         uses: actions/cache@v3
         with:
-          path: ${{ runner.workspace }}/R/library
+          path: ${{ runner.workspace }}/Library
           key: R-packages-${{ runner.os }}
-          restore-keys: |
-            R-packages-${{ runner.os }}
 
       - name: Install IRkernel
         run: Rscript -e 'install.packages("IRkernel")'
