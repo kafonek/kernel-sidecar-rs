@@ -5,6 +5,7 @@ zeromq::ZmqMessage -> WireProtocol -> Response -> Message<T> with Jupyter messag
 */
 use crate::jupyter::constants::EMPTY_DICT_BYTES;
 use crate::jupyter::header::Header;
+use crate::jupyter::iopub_content::display_data::{DisplayData, UpdateDisplayData};
 use crate::jupyter::iopub_content::status::Status;
 use crate::jupyter::iopub_content::stream::Stream;
 use crate::jupyter::message::Message;
@@ -25,6 +26,8 @@ pub enum Response {
     KernelInfo(Message<KernelInfoReply>),
     Execute(Message<ExecuteReply>),
     Stream(Message<Stream>),
+    DisplayData(Message<DisplayData>),
+    UpdateDisplayData(Message<UpdateDisplayData>),
     Unmodeled(Message<UnmodeledContent>),
 }
 
@@ -36,6 +39,8 @@ impl Response {
             Response::KernelInfo(msg) => msg.parent_msg_id(),
             Response::Execute(msg) => msg.parent_msg_id(),
             Response::Stream(msg) => msg.parent_msg_id(),
+            Response::DisplayData(msg) => msg.parent_msg_id(),
+            Response::UpdateDisplayData(msg) => msg.parent_msg_id(),
             Response::Unmodeled(msg) => msg.parent_msg_id(),
         }
     }
@@ -47,7 +52,12 @@ impl Response {
             Response::KernelInfo(msg) => msg.header.msg_type.to_owned(),
             Response::Execute(msg) => msg.header.msg_type.to_owned(),
             Response::Stream(msg) => msg.header.msg_type.to_owned(),
-            Response::Unmodeled(msg) => msg.header.msg_type.to_owned(),
+            Response::DisplayData(msg) => msg.header.msg_type.to_owned(),
+            Response::UpdateDisplayData(msg) => msg.header.msg_type.to_owned(),
+            Response::Unmodeled(msg) => {
+                let real_msg_type = msg.header.msg_type.to_owned();
+                format!("unmodeled_{}", real_msg_type)
+            }
         }
     }
 }
@@ -100,6 +110,26 @@ impl From<WireProtocol> for Response {
                     content,
                 };
                 Response::Stream(msg)
+            }
+            "display_data" => {
+                let content: DisplayData = wp.content.into();
+                let msg: Message<DisplayData> = Message {
+                    header,
+                    parent_header,
+                    metadata: Some(metadata),
+                    content,
+                };
+                Response::DisplayData(msg)
+            }
+            "update_display_data" => {
+                let content: UpdateDisplayData = wp.content.into();
+                let msg: Message<UpdateDisplayData> = Message {
+                    header,
+                    parent_header,
+                    metadata: Some(metadata),
+                    content,
+                };
+                Response::UpdateDisplayData(msg)
             }
             _ => {
                 let content: UnmodeledContent = serde_json::from_slice(&wp.content)
