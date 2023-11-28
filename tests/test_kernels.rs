@@ -9,12 +9,11 @@ use kernel_sidecar_rs::utils::JupyterKernel;
 // Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
 async fn start_kernel() -> (JupyterKernel, Client) {
     let silent = true;
-    let kernel: JupyterKernel;
-    if cfg!(feature = "test_evcxr") {
-        kernel = JupyterKernel::evcxr(silent);
+    let kernel = if cfg!(feature = "test_evcxr") {
+        JupyterKernel::evcxr(silent)
     } else {
-        kernel = JupyterKernel::ipython(silent);
-    }
+        JupyterKernel::ipython(silent)
+    };
     let client = Client::new(kernel.connection_info.clone()).await;
     client.heartbeat().await;
     // Anecdotally, have noticed tests fail becaues Status messages aren't showing up as expected.
