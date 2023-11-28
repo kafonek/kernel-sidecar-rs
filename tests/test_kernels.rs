@@ -53,7 +53,9 @@ async fn test_execute_request() {
     let action = client.execute_request("2 + 2".to_string(), handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
+    dbg!(&counts);
     // status busy -> execute_input -> stream -> status idle & execute_reply
     assert_eq!(counts["status"], 2);
+    assert_eq!(counts["execute_result"], 1);
     assert_eq!(counts["execute_reply"], 1);
 }
