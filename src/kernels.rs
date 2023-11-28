@@ -79,6 +79,27 @@ impl JupyterKernel {
             connection_file: file_path,
         }
     }
+
+    // Start a Typescript (deno) kernel
+    pub fn deno(silent: bool) -> Self {
+        let kernel_name = "deno".to_string();
+        let connection_info = ConnectionInfo::new(Some(kernel_name)).unwrap();
+        let file_path = connection_info.to_temp_file().unwrap();
+        let cmd = vec![
+            "deno",
+            "jupyter",
+            "--unstable",
+            "--kernel",
+            "--conn",
+            file_path.to_str().unwrap(),
+        ];
+        let process = Self::start_process(cmd, silent);
+        Self {
+            process,
+            connection_info,
+            connection_file: file_path,
+        }
+    }
 }
 
 impl Drop for JupyterKernel {
