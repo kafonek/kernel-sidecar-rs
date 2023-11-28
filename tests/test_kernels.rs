@@ -7,14 +7,16 @@ use kernel_sidecar_rs::kernels::JupyterKernel;
 // Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
 async fn start_kernel() -> (JupyterKernel, Client) {
     let silent = true;
-    let kernel = if cfg!(feature = "test_evcxr") {
+    let kernel = if cfg!(feature = "test_ipython") {
+        JupyterKernel::ipython(silent)
+    } else if cfg!(feature = "test_evcxr") {
         JupyterKernel::evcxr(silent)
     } else if cfg!(feature = "test_irkernel") {
         JupyterKernel::irkernel(silent)
     } else if cfg!(feature = "test_deno") {
         JupyterKernel::deno(silent)
     } else {
-        JupyterKernel::ipython(silent)
+        panic!("For tests, choose one feature flag from: test_ipython, test_evcxr, test_irkernel, test_deno")
     };
     let client = Client::new(kernel.connection_info.clone()).await;
     client.heartbeat().await;
@@ -56,6 +58,14 @@ async fn test_execute_request() {
     dbg!(&counts);
     // status busy -> execute_input -> stream -> status idle & execute_reply
     assert_eq!(counts["status"], 2);
-    assert_eq!(counts["execute_result"], 1);
     assert_eq!(counts["execute_reply"], 1);
+    // Python, Rust, and Deno will give execute_result on 2 + 2. R will give display_data.
+    #[cfg(any(
+        feature = "test_ipython",
+        feature = "test_evcxr",
+        feature = "test_deno"
+    ))]
+    assert_eq!(counts["execute_result"], 1);
+    #[cfg(feature = "test_irkernel")]
+    assert_eq!(counts["display_data"], 1);
 }

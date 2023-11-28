@@ -30,7 +30,7 @@ jobs:
           toolchain: '1.74.0'
 
       - name: Run tests
-        run: cargo test 
+        run: cargo test --features test_ipython
 
   test-evcxr:
     runs-on: ubuntu-latest
