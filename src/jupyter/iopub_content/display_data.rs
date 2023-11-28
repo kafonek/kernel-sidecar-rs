@@ -4,7 +4,7 @@ https://jupyter-client.readthedocs.io/en/latest/messaging.html#display-data
 use std::collections::HashMap;
 
 use bytes::Bytes;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 
 #[allow(dead_code)]
 #[derive(Deserialize, Debug)]
@@ -16,16 +16,16 @@ pub struct Transient {
 // otherwise deserialize it as Some(Transient)
 fn deserialize_transient<'de, D>(deserializer: D) -> Result<Option<Transient>, D::Error>
 where
-    D: serde::Deserializer<'de>,
+    D: Deserializer<'de>,
 {
-    let v: serde_json::Value = Deserialize::deserialize(deserializer)?;
+    let v: Option<serde_json::Value> = Option::deserialize(deserializer)?;
+    dbg!(&v);
     match v {
-        serde_json::Value::Object(map) if map.is_empty() => Ok(None),
-        _ => {
-            let transient: Transient =
-                serde_json::from_value(v).map_err(serde::de::Error::custom)?;
-            Ok(Some(transient))
-        }
+        Some(serde_json::Value::Object(map)) if map.is_empty() => Ok(None),
+        Some(value) => serde_json::from_value(value)
+            .map(Some)
+            .map_err(serde::de::Error::custom),
+        None => Ok(None),
     }
 }
 
@@ -34,12 +34,15 @@ where
 pub struct DisplayData {
     data: HashMap<String, serde_json::Value>,
     metadata: serde_json::Value,
-    #[serde(deserialize_with = "deserialize_transient")]
+    // Dev note: serde(default) is important here, when using custom deserialize_with and Option
+    // then it will throw errors when the field is missing unless default is included.
+    #[serde(default, deserialize_with = "deserialize_transient")]
     transient: Option<Transient>,
 }
 
 impl From<Bytes> for DisplayData {
     fn from(bytes: Bytes) -> Self {
+        dbg!(&bytes);
         serde_json::from_slice(&bytes).expect("Failed to deserialize DisplayData")
     }
 }
@@ -49,7 +52,9 @@ impl From<Bytes> for DisplayData {
 pub struct UpdateDisplayData {
     data: HashMap<String, serde_json::Value>,
     metadata: serde_json::Value,
-    #[serde(deserialize_with = "deserialize_transient")]
+    // Dev note: serde(default) is important here, when using custom deserialize_with and Option
+    // then it will throw errors when the field is missing unless default is included.
+    #[serde(default, deserialize_with = "deserialize_transient")]
     transient: Option<Transient>,
 }
 

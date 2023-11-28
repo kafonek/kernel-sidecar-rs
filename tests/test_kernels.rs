@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
+use kernel_sidecar_rs::{client::Client, handlers::DebugHandler};
 
 // Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
 async fn start_kernel() -> (JupyterKernel, Client) {
@@ -48,8 +48,12 @@ async fn test_execute_request() {
 
     // send execute_request
     let handler = MessageCountHandler::new();
+    let debug_handler = DebugHandler::new();
 
-    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
+    let handlers = vec![
+        Arc::new(handler.clone()) as Arc<dyn Handler>,
+        Arc::new(debug_handler) as Arc<dyn Handler>,
+    ];
     let action = client.execute_request("2 + 2".to_string(), handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
