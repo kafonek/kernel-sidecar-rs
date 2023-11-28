@@ -19,7 +19,6 @@ where
     D: Deserializer<'de>,
 {
     let v: Option<serde_json::Value> = Option::deserialize(deserializer)?;
-    dbg!(&v);
     match v {
         Some(serde_json::Value::Object(map)) if map.is_empty() => Ok(None),
         Some(value) => serde_json::from_value(value)
