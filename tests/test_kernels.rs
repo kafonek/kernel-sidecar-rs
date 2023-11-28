@@ -24,7 +24,7 @@ async fn start_kernel() -> (JupyterKernel, Client) {
     // Could be totally wrong.
     // Separately, there may be an edge case where multiple JupyterKernel::ipython calls end up
     // with the same ports and it all blows up. TODO: fix that.
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
     (kernel, client)
 }
 
