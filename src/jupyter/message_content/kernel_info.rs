@@ -57,7 +57,7 @@ struct LanguageInfo {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KernelInfoReply {
     banner: String,
-    help_links: Vec<HelpLink>,
+    help_links: Option<Vec<HelpLink>>,
     implementation: String,
     implementation_version: String,
     language_info: LanguageInfo,
