@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use std::sync::Arc;
 
 use kernel_sidecar_rs::client::Client;
