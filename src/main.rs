@@ -3,7 +3,8 @@ use kernel_sidecar_rs::handlers::{DebugHandler, Handler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
 use tokio::time::sleep;
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
