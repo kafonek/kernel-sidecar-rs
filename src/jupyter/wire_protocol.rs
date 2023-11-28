@@ -87,9 +87,16 @@ impl From<WireProtocol> for ZmqMessage {
 impl From<ZmqMessage> for WireProtocol {
     fn from(zmq_message: ZmqMessage) -> Self {
         let mut frames = zmq_message.into_vecdeque();
-        // I've observed that at least in the evcxr_jupyter Rust kernel, there are times when the
-        // kernel doesn't send back the identity frame. The other 6 frames are included though.
+        // The number of frames coming back from different types of Kernels has been frustratingly
+        // inconsistent. evcxr_jupyter (Rust) sometimes sends back 6 frames, skipping the identity
+        // frame. irkernel (R) sometimes sends two frames worth of identity.
         let identity = match frames.len() {
+            8 => {
+                // only seen this extra frame in irkernel so far, first frame is bytes and
+                // second frame is the string 'kernel'
+                frames.pop_front().expect("Missing identity frame");
+                frames.pop_front().expect("Missing identity frame")
+            }
             7 => frames.pop_front().expect("Missing identity frame"),
             _ => Bytes::from("missing identity header"),
         };

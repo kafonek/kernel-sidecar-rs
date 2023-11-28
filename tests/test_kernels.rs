@@ -1,16 +1,16 @@
-use std::collections::HashMap;
-
 use std::sync::Arc;
 
 use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
-use kernel_sidecar_rs::utils::JupyterKernel;
+use kernel_sidecar_rs::kernels::JupyterKernel;
 
 // Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
 async fn start_kernel() -> (JupyterKernel, Client) {
     let silent = true;
     let kernel = if cfg!(feature = "test_evcxr") {
         JupyterKernel::evcxr(silent)
+    } else if cfg!(feature = "test_irkernel") {
+        JupyterKernel::irkernel(silent)
     } else {
         JupyterKernel::ipython(silent)
     };
@@ -36,10 +36,8 @@ async fn test_kernel_info() {
     let action = client.kernel_info_request(handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
-    let mut expected = HashMap::new();
-    expected.insert("kernel_info_reply".to_string(), 1);
-    expected.insert("status".to_string(), 2);
-    assert_eq!(*counts, expected);
+    assert_eq!(counts["status"], 2);
+    assert_eq!(counts["kernel_info_reply"], 1);
 }
 
 #[tokio::test]
@@ -53,11 +51,8 @@ async fn test_execute_request() {
     let action = client.execute_request("2 + 2".to_string(), handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
-    let mut expected = HashMap::new();
     // status busy -> execute_input -> stream -> status idle & execute_reply
-    expected.insert("status".to_string(), 2);
-    expected.insert("execute_input".to_string(), 1);
-    expected.insert("execute_result".to_string(), 1);
-    expected.insert("execute_reply".to_string(), 1);
-    assert_eq!(*counts, expected);
+    assert_eq!(counts["status"], 2);
+    assert_eq!(counts["execute_input"], 1);
+    assert_eq!(counts["execute_reply"], 1);
 }

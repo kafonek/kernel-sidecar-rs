@@ -23,7 +23,4 @@ Roadmap:
 
 # Run
 
-1. Start an IPython kernel `python -m ipykernel_launcher --debug -f /tmp/kernel.json`
-2. Run `cargo main` (currently hardcoded to read in connection info from `/tmp/kernel.json`)
-
-The `main.rs` script at this time creates an `Action` for a `kernel_info_request` and awaits its completion, meaning it should run until kernel goes to idle and we see `kernel_info_reply`. A `Handler` is attached to the action to `dbg!` all messages related to the original request.
+Use `cargo run`. The `main.rs` script at this time starts a Jupyter Kernel as a child process, the available utility functions can start `ipykernel` (Python), `evcxr_jupyter` (Rust), or `irkernel` (R) kernels. After that, the script creates an `Action` for a `kernel_info_request` and awaits its completion, meaning it should run until kernel goes to idle and we see `kernel_info_reply`. A `Handler` is attached to the action to `dbg!` all messages related to the original request.
