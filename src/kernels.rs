@@ -65,13 +65,12 @@ impl JupyterKernel {
         let kernel_name = "ir".to_string();
         let connection_info = ConnectionInfo::new(Some(kernel_name)).unwrap();
         let file_path = connection_info.to_temp_file().unwrap();
-        let conn_file_args = format!("--connection-file={}", file_path.to_str().unwrap());
         let cmd = vec![
             "R",
             "-e",
             "IRkernel::main()",
             "--args",
-            conn_file_args.as_str(),
+            file_path.to_str().unwrap(),
         ];
         let process = Self::start_process(cmd, silent);
         Self {
