@@ -8,6 +8,17 @@ use kernel_sidecar_rs::jupyter::response::Response;
 use kernel_sidecar_rs::utils::IPykernel;
 use tokio::sync::Mutex;
 
+async fn start_kernel() -> (IPykernel, Client) {
+    // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up
+    let kernel = IPykernel::new(true);
+    kernel.wait_for_file().await;
+    let connection_info = ConnectionInfo::from_file(kernel.connection_file.to_str().unwrap())
+        .expect("Failed to read connection info from fixture");
+    let client = Client::new(connection_info).await;
+    client.heartbeat().await;
+    (kernel, client)
+}
+
 #[derive(Debug, Clone)]
 struct MessageCountHandler {
     pub counts: Arc<Mutex<HashMap<String, usize>>>,
@@ -33,13 +44,7 @@ impl Handler for MessageCountHandler {
 
 #[tokio::test]
 async fn test_kernel_info() {
-    // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up
-    let kernel = IPykernel::new();
-    kernel.wait_for_file().await;
-    let connection_info = ConnectionInfo::from_file(kernel.connection_file.to_str().unwrap())
-        .expect("Failed to read connection info from fixture");
-    let client = Client::new(connection_info).await;
-    client.heartbeat().await;
+    let (_kernel_process, client) = start_kernel().await;
 
     // send kernel_info_request
     let handler = MessageCountHandler::new();
@@ -55,13 +60,7 @@ async fn test_kernel_info() {
 
 #[tokio::test]
 async fn test_execute_request() {
-    // Start Kernel, wait for connection file to be written, and wait for ZMQ channels to come up
-    let kernel = IPykernel::new();
-    kernel.wait_for_file().await;
-    let connection_info = ConnectionInfo::from_file(kernel.connection_file.to_str().unwrap())
-        .expect("Failed to read connection info from fixture");
-    let client = Client::new(connection_info).await;
-    client.heartbeat().await;
+    let (_kernel_process, client) = start_kernel().await;
 
     // send execute_request
     let handler = MessageCountHandler::new();

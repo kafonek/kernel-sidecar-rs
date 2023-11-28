@@ -7,14 +7,9 @@ pub struct IPykernel {
     pub connection_file: PathBuf,
 }
 
-impl Default for IPykernel {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl IPykernel {
-    pub fn new() -> Self {
+    // start an ipykernel process. If set to silent, stdout redirects to /dev/null
+    pub fn new(silent: bool) -> Self {
         // write connection file at /tmp/kernel-sidecar-{uuid}.json
         let mut file_path = std::env::temp_dir();
         file_path.push(format!("kernel-sidecar-{}.json", uuid::Uuid::new_v4()));
@@ -24,6 +19,11 @@ impl IPykernel {
             .arg("ipykernel_launcher")
             .arg("-f")
             .arg(&connection_file)
+            .stdout(if silent {
+                std::process::Stdio::null()
+            } else {
+                std::process::Stdio::inherit()
+            })
             .spawn()
             .expect("Failed to start IPykernel");
         IPykernel {
