@@ -1,3 +1,9 @@
+<p align="center">
+<a href="https://github.com/kafonek/kernel-sidecar-rs/actions/workflows/ci.yaml">
+    <img src="https://github.com/kafonek/kernel-sidecar-rs/actions/workflows/ci.yaml/badge.svg" alt="Tests" />
+</a>
+</p>
+
 # Overview
 
 This is an attempt to port [kernel-sidecar](https://github.com/kafonek/kernel-sidecar) to Rust.
