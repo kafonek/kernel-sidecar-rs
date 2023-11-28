@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use kernel_sidecar_rs::client::Client;
-use kernel_sidecar_rs::handlers::{DebugHandler, Handler, MessageCountHandler};
+use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
 
 // Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
