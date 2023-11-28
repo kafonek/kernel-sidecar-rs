@@ -7,8 +7,8 @@ The impl's for message_content T -> Message<T> -> Request are in individual mess
 */
 
 use crate::jupyter::message::Message;
-use crate::jupyter::message_content::execute::ExecuteRequest;
-use crate::jupyter::message_content::kernel_info::KernelInfoRequest;
+use crate::jupyter::shell_content::execute::ExecuteRequest;
+use crate::jupyter::shell_content::kernel_info::KernelInfoRequest;
 use crate::jupyter::wire_protocol::WireProtocol;
 
 #[derive(Debug)]

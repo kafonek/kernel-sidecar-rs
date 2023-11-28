@@ -46,10 +46,10 @@ use zeromq::{DealerSocket, ReqSocket, Socket, SocketRecv, SocketSend, SubSocket,
 use crate::actions::Action;
 use crate::handlers::Handler;
 use crate::jupyter::connection_file::ConnectionInfo;
-use crate::jupyter::message_content::execute::ExecuteRequest;
-use crate::jupyter::message_content::kernel_info::KernelInfoRequest;
 use crate::jupyter::request::Request;
 use crate::jupyter::response::Response;
+use crate::jupyter::shell_content::execute::ExecuteRequest;
+use crate::jupyter::shell_content::kernel_info::KernelInfoRequest;
 use crate::jupyter::wire_protocol::WireProtocol;
 
 #[derive(Debug, Clone)]

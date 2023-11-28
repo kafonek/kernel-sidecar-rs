@@ -5,11 +5,12 @@ zeromq::ZmqMessage -> WireProtocol -> Response -> Message<T> with Jupyter messag
 */
 use crate::jupyter::constants::EMPTY_DICT_BYTES;
 use crate::jupyter::header::Header;
+use crate::jupyter::iopub_content::status::Status;
+use crate::jupyter::iopub_content::stream::Stream;
 use crate::jupyter::message::Message;
-use crate::jupyter::message_content::execute::ExecuteReply;
-use crate::jupyter::message_content::kernel_info::KernelInfoReply;
-use crate::jupyter::message_content::status::Status;
 use crate::jupyter::metadata::Metadata;
+use crate::jupyter::shell_content::execute::ExecuteReply;
+use crate::jupyter::shell_content::kernel_info::KernelInfoReply;
 use crate::jupyter::wire_protocol::WireProtocol;
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +24,7 @@ pub enum Response {
     Status(Message<Status>),
     KernelInfo(Message<KernelInfoReply>),
     Execute(Message<ExecuteReply>),
+    Stream(Message<Stream>),
     Unmodeled(Message<UnmodeledContent>),
 }
 
@@ -33,6 +35,7 @@ impl Response {
             Response::Status(msg) => msg.parent_msg_id(),
             Response::KernelInfo(msg) => msg.parent_msg_id(),
             Response::Execute(msg) => msg.parent_msg_id(),
+            Response::Stream(msg) => msg.parent_msg_id(),
             Response::Unmodeled(msg) => msg.parent_msg_id(),
         }
     }
@@ -43,6 +46,7 @@ impl Response {
             Response::Status(msg) => msg.header.msg_type.to_owned(),
             Response::KernelInfo(msg) => msg.header.msg_type.to_owned(),
             Response::Execute(msg) => msg.header.msg_type.to_owned(),
+            Response::Stream(msg) => msg.header.msg_type.to_owned(),
             Response::Unmodeled(msg) => msg.header.msg_type.to_owned(),
         }
     }
@@ -86,6 +90,16 @@ impl From<WireProtocol> for Response {
                     content,
                 };
                 Response::Execute(msg)
+            }
+            "stream" => {
+                let content: Stream = wp.content.into();
+                let msg: Message<Stream> = Message {
+                    header,
+                    parent_header,
+                    metadata: Some(metadata),
+                    content,
+                };
+                Response::Stream(msg)
             }
             _ => {
                 let content: UnmodeledContent = serde_json::from_slice(&wp.content)
