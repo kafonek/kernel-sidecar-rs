@@ -6,14 +6,10 @@ use std::task::{Context, Poll, Waker};
 
 use tokio::sync::{mpsc, Mutex};
 
+use crate::handlers::Handler;
 use crate::jupyter::message_content::status::KernelStatus;
 use crate::jupyter::request::Request;
 use crate::jupyter::response::Response;
-
-#[async_trait::async_trait]
-pub trait Handler: Debug + Send + Sync {
-    async fn handle(&self, msg: &Response);
-}
 
 #[derive(Debug, PartialEq)]
 pub enum ExpectedReplyType {

@@ -3,6 +3,7 @@ pub mod message_content;
 pub mod metadata;
 pub mod wire_protocol;
 
+pub mod connection_file;
 pub mod constants;
 pub mod message;
 pub mod request;
