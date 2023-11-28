@@ -48,12 +48,8 @@ async fn test_execute_request() {
 
     // send execute_request
     let handler = MessageCountHandler::new();
-    let debug_handler = DebugHandler::new();
 
-    let handlers = vec![
-        Arc::new(handler.clone()) as Arc<dyn Handler>,
-        Arc::new(debug_handler) as Arc<dyn Handler>,
-    ];
+    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
     let action = client.execute_request("2 + 2".to_string(), handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
