@@ -55,7 +55,7 @@ async fn test_execute_request() {
     let action = client.execute_request("2 + 2".to_string(), handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
-    // status busy -> execute_input -> stream -> status idle & execute_reply
+    // All kernel types should give status busy -> status idle -> execute reply
     assert_eq!(counts["status"], 2);
     assert_eq!(counts["execute_reply"], 1);
     // Python, Rust, and Deno will give execute_result on 2 + 2. R will give display_data.
