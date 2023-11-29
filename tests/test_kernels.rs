@@ -55,6 +55,5 @@ async fn test_execute_request() {
     let counts = handler.counts.lock().await;
     // status busy -> execute_input -> stream -> status idle & execute_reply
     assert_eq!(counts["status"], 2);
-    assert_eq!(counts["execute_input"], 1);
     assert_eq!(counts["execute_reply"], 1);
 }

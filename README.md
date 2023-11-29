@@ -14,7 +14,11 @@ Roadmap:
  - [x] Implement the Action and message delegation concepts from Python version
  - [ ] Model all Jupyter messages
  - [ ] Model in-memory Notebook and create utility handlers for updating it based on outputs
- - [x] Test multiple Kernel backends (IPython, Rust evcxr, etc)
+ - [x] Test multiple Kernel backends
+   - [x] Python (ipykernel)
+   - [x] Rust (evcxr_jupyter)
+   - [x] Typescript (deno)
+   - [x] R (irkernel)
  - [ ] Implement CLI similar to Python kernel-sidecar
  - [ ] Create example app of controlling Notebooks from external calls, e.g. AI function calling
  - [ ] Create example of integration with Carabiner GPT
