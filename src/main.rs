@@ -1,9 +1,9 @@
 /*
 Mainly here for click-testing various commands and code blocks for different Kernel backends.
 */
-use kernel_sidecar_rs::handlers::{DebugHandler, Handler};
+use kernel_sidecar_rs::client::Client;
+use kernel_sidecar_rs::handlers::{DebugHandler, Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
-use kernel_sidecar_rs::{client::Client, handlers::MessageCountHandler};
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::time::sleep;
 
