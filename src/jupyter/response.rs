@@ -7,6 +7,7 @@ use crate::jupyter::constants::EMPTY_DICT_BYTES;
 use crate::jupyter::header::Header;
 use crate::jupyter::iopub_content::display_data::{DisplayData, UpdateDisplayData};
 use crate::jupyter::iopub_content::errors::Error;
+use crate::jupyter::iopub_content::execute_input::ExecuteInput;
 use crate::jupyter::iopub_content::execute_result::ExecuteResult;
 use crate::jupyter::iopub_content::status::Status;
 use crate::jupyter::iopub_content::stream::Stream;
@@ -29,6 +30,7 @@ pub enum Response {
     Execute(Message<ExecuteReply>),
     // Messages from iopub channel
     Status(Message<Status>),
+    ExecuteInput(Message<ExecuteInput>),
     ExecuteResult(Message<ExecuteResult>),
     Stream(Message<Stream>),
     DisplayData(Message<DisplayData>),
@@ -46,6 +48,7 @@ impl Response {
             Response::Status(msg) => msg.parent_msg_id(),
             Response::KernelInfo(msg) => msg.parent_msg_id(),
             Response::Execute(msg) => msg.parent_msg_id(),
+            Response::ExecuteInput(msg) => msg.parent_msg_id(),
             Response::ExecuteResult(msg) => msg.parent_msg_id(),
             Response::Stream(msg) => msg.parent_msg_id(),
             Response::DisplayData(msg) => msg.parent_msg_id(),
@@ -61,6 +64,7 @@ impl Response {
             Response::Status(msg) => msg.header.msg_type.to_owned(),
             Response::KernelInfo(msg) => msg.header.msg_type.to_owned(),
             Response::Execute(msg) => msg.header.msg_type.to_owned(),
+            Response::ExecuteInput(msg) => msg.header.msg_type.to_owned(),
             Response::ExecuteResult(msg) => msg.header.msg_type.to_owned(),
             Response::Stream(msg) => msg.header.msg_type.to_owned(),
             Response::DisplayData(msg) => msg.header.msg_type.to_owned(),
@@ -112,6 +116,16 @@ impl From<WireProtocol> for Response {
                     content,
                 };
                 Response::Execute(msg)
+            }
+            "execute_input" => {
+                let content: ExecuteInput = wp.content.into();
+                let msg: Message<ExecuteInput> = Message {
+                    header,
+                    parent_header,
+                    metadata: Some(metadata),
+                    content,
+                };
+                Response::ExecuteInput(msg)
             }
             "execute_result" => {
                 let content: ExecuteResult = wp.content.into();
