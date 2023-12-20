@@ -71,6 +71,7 @@ async fn test_execute_request() {
 }
 
 #[tokio::test]
+#[cfg(feature = "test_ipython")]
 async fn test_clear_output() {
     let (_kernel, client) = start_kernel().await;
 
@@ -88,5 +89,5 @@ async fn test_clear_output() {
     let action = client.execute_request(code.to_string(), handlers).await;
     action.await;
     let counts = handler.counts.lock().await;
-    assert_eq!(counts["clear_output"], 1);
+    assert_eq!(counts.get("clear_output"), Some(&1));
 }
