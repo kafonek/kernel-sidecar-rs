@@ -2,6 +2,11 @@
 Models a Notebook document. https://ipython.org/ipython-doc/3/notebook/nbformat.html
 */
 
+use crate::jupyter::iopub_content::display_data::DisplayData;
+use crate::jupyter::iopub_content::errors::Error;
+use crate::jupyter::iopub_content::execute_result::ExecuteResult;
+use crate::jupyter::iopub_content::stream::Stream;
+use enum_as_inner::EnumAsInner;
 use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -14,26 +19,14 @@ pub struct Notebook {
     pub nbformat_minor: u32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumAsInner)]
 #[serde(tag = "output_type", rename_all = "snake_case")]
 pub enum Output {
-    // TODO: look into using the content structs from jupyter/iopub_content instead of redefining?
-    DisplayData(serde_json::Value),
-    Stream {
-        name: String,
-        #[serde(deserialize_with = "list_or_string_to_string")]
-        text: String,
-    },
-    ExecuteResult {
-        execution_count: u32,
-        data: serde_json::Value,
-        metadata: serde_json::Value,
-    },
-    Error {
-        ename: String,
-        evalue: String,
-        traceback: Vec<String>,
-    },
+    // TODO: use the content structs from crate::jupyter::iopub_content instead of redefining?
+    DisplayData(DisplayData),
+    Stream(Stream),
+    ExecuteResult(ExecuteResult),
+    Error(Error),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -71,7 +64,7 @@ pub struct RawCell {
 }
 
 // Custom deserialization for source field since it may be a Vec<String> or String
-fn list_or_string_to_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+pub fn list_or_string_to_string<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: Deserializer<'de>,
 {

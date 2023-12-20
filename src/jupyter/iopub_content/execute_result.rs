@@ -5,14 +5,14 @@ use std::collections::HashMap;
 
 use bytes::Bytes;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[allow(dead_code)]
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Serialize, PartialEq, Deserialize, Debug)]
 pub struct ExecuteResult {
-    execution_count: u32,
+    pub execution_count: u32,
     pub data: HashMap<String, serde_json::Value>,
-    metadata: serde_json::Value,
+    pub metadata: serde_json::Value,
 }
 
 impl From<Bytes> for ExecuteResult {

@@ -4,10 +4,10 @@ https://jupyter-client.readthedocs.io/en/latest/messaging.html#display-data
 use std::collections::HashMap;
 
 use bytes::Bytes;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[allow(dead_code)]
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Serialize, PartialEq)]
 pub struct Transient {
     display_id: String,
 }
@@ -29,7 +29,7 @@ where
 }
 
 #[allow(dead_code)]
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Serialize, PartialEq)]
 pub struct DisplayData {
     data: HashMap<String, serde_json::Value>,
     metadata: serde_json::Value,

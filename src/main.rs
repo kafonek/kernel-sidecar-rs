@@ -8,22 +8,35 @@ use tokio::signal::unix::{signal, SignalKind};
 use tokio::time::sleep;
 
 use indoc::indoc;
-use std::collections::HashMap;
+use kernel_sidecar_rs::notebook::Output;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::RwLock;
 
 use kernel_sidecar_rs::handlers::OutputHandler;
 
-#[derive(Debug)]
-struct DebugOutputHandler {}
+#[derive(Debug, Clone)]
+struct SimpleOutputHandler {
+    pub output: Arc<RwLock<Vec<Output>>>,
+}
+
+impl SimpleOutputHandler {
+    pub fn new() -> Self {
+        Self {
+            output: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+}
 
 #[async_trait::async_trait]
-impl OutputHandler for DebugOutputHandler {
-    async fn add_cell_content(&self, content: &HashMap<String, serde_json::Value>) {
-        println!("add_cell_content: {:?}", content);
+impl OutputHandler for SimpleOutputHandler {
+    async fn add_cell_content(&self, content: Output) {
+        self.output.write().await.push(content);
+        println!("add_cell_content");
     }
 
     async fn clear_cell_content(&self) {
+        self.output.write().await.clear();
         println!("clear_cell_content");
     }
 }
@@ -31,8 +44,7 @@ impl OutputHandler for DebugOutputHandler {
 #[tokio::main]
 async fn main() {
     let silent = true;
-    // let kernel = JupyterKernel::ipython(silent);
-    let kernel = JupyterKernel::deno(silent);
+    let kernel = JupyterKernel::ipython(silent);
     let client = Client::new(kernel.connection_info.clone()).await;
     client.heartbeat().await;
     // small sleep to make sure iopub is connected,
@@ -40,17 +52,21 @@ async fn main() {
 
     let debug_handler = DebugHandler::new();
     let msg_count_handler = MessageCountHandler::new();
+    let output_handler = SimpleOutputHandler::new();
     let handlers = vec![
         Arc::new(debug_handler) as Arc<dyn Handler>,
         Arc::new(msg_count_handler.clone()) as Arc<dyn Handler>,
-        Arc::new(DebugOutputHandler {}) as Arc<dyn Handler>,
+        Arc::new(output_handler.clone()) as Arc<dyn Handler>,
     ];
     // let action = client.kernel_info_request(handlers).await;
     let code = indoc! {r#"
     from IPython.display import clear_output
+    import time
 
-    print("Hello, world!")
+
+    print("Before Clear Output")
     clear_output()
+    print("After Clear Output")
     "#}
     .trim();
     let action = client.execute_request(code.to_owned(), handlers).await;
@@ -68,4 +84,5 @@ async fn main() {
         }
     }
     println!("Message counts: {:?}", msg_count_handler.counts);
+    println!("Output: {:?}", output_handler.output.read().await);
 }

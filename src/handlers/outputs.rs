@@ -1,18 +1,26 @@
 use crate::handlers::Handler;
 use crate::jupyter::response::Response;
-use std::collections::HashMap;
+use crate::notebook::Output;
+
 use std::fmt::Debug;
 
 #[async_trait::async_trait]
 pub trait OutputHandler: Handler + Debug + Send + Sync {
-    async fn add_cell_content(&self, content: &HashMap<String, serde_json::Value>);
+    async fn add_cell_content(&self, content: Output);
     async fn clear_cell_content(&self);
 
-    #[allow(clippy::single_match)]
     async fn handle_output(&self, msg: &Response) {
         match msg {
-            Response::ExecuteResult(result) => {
-                self.add_cell_content(&result.content.data).await;
+            Response::ExecuteResult(m) => {
+                let output = Output::ExecuteResult(m.content.clone());
+                self.add_cell_content(output).await;
+            }
+            Response::Stream(m) => {
+                let output = Output::Stream(m.content.clone());
+                self.add_cell_content(output).await;
+            }
+            Response::ClearOutput(_m) => {
+                self.clear_cell_content().await;
             }
             _ => {}
         }

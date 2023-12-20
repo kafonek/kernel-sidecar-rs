@@ -1,8 +1,12 @@
 use std::sync::Arc;
 
 use kernel_sidecar_rs::client::Client;
+use kernel_sidecar_rs::handlers::OutputHandler;
 use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
+use kernel_sidecar_rs::jupyter::iopub_content::stream::StreamName;
 use kernel_sidecar_rs::kernels::JupyterKernel;
+use kernel_sidecar_rs::notebook::Output;
+use tokio::sync::RwLock;
 
 // Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
 async fn start_kernel() -> (JupyterKernel, Client) {
@@ -69,6 +73,34 @@ async fn test_execute_request() {
     assert_eq!(counts["display_data"], 1);
 }
 
+/// Testing outputs
+
+#[derive(Debug, Clone)]
+struct SimpleOutputHandler {
+    pub output: Arc<RwLock<Vec<Output>>>,
+}
+
+impl SimpleOutputHandler {
+    pub fn new() -> Self {
+        Self {
+            output: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl OutputHandler for SimpleOutputHandler {
+    async fn add_cell_content(&self, content: Output) {
+        self.output.write().await.push(content);
+        println!("add_cell_content");
+    }
+
+    async fn clear_cell_content(&self) {
+        self.output.write().await.clear();
+        println!("clear_cell_content");
+    }
+}
+
 #[tokio::test]
 #[cfg(feature = "test_ipython")]
 async fn test_clear_output() {
@@ -76,18 +108,22 @@ async fn test_clear_output() {
     let (_kernel, client) = start_kernel().await;
 
     // send execute_request
-    let handler = MessageCountHandler::new();
+    let handler = SimpleOutputHandler::new();
 
     let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
     let code = indoc! {r#"
     from IPython.display import clear_output
     
-    print("Hello, world!")
+    print("Before Clear Output")
     clear_output()
+    print("After Clear Output")
     "#}
     .trim();
     let action = client.execute_request(code.to_string(), handlers).await;
     action.await;
-    let counts = handler.counts.lock().await;
-    assert_eq!(counts.get("clear_output"), Some(&1));
+    let final_output = handler.output.read().await;
+    assert_eq!(final_output.len(), 1);
+    let output = &final_output[0].as_stream().unwrap();
+    assert_eq!(output.name, StreamName::Stdout);
+    assert_eq!(output.text, "After Clear Output\n");
 }
