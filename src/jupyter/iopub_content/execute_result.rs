@@ -11,7 +11,7 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug)]
 pub struct ExecuteResult {
     execution_count: u32,
-    data: HashMap<String, serde_json::Value>,
+    pub data: HashMap<String, serde_json::Value>,
     metadata: serde_json::Value,
 }
 
