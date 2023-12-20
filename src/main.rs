@@ -8,8 +8,24 @@ use tokio::signal::unix::{signal, SignalKind};
 use tokio::time::sleep;
 
 use indoc::indoc;
-use std::sync::Arc;
 use std::time::Duration;
+use std::{collections::HashMap, sync::Arc};
+
+use kernel_sidecar_rs::handlers::OutputHandler;
+
+#[derive(Debug)]
+struct DebugOutputHandler {}
+
+#[async_trait::async_trait]
+impl OutputHandler for DebugOutputHandler {
+    async fn add_cell_content(&self, content: &HashMap<String, serde_json::Value>) {
+        println!("add_cell_content: {:?}", content);
+    }
+
+    async fn clear_cell_content(&self) {
+        println!("clear_cell_content");
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -25,6 +41,7 @@ async fn main() {
     let handlers = vec![
         Arc::new(debug_handler) as Arc<dyn Handler>,
         Arc::new(msg_count_handler.clone()) as Arc<dyn Handler>,
+        Arc::new(DebugOutputHandler {}) as Arc<dyn Handler>,
     ];
     // let action = client.kernel_info_request(handlers).await;
     let code = indoc! {"2 + 2"};
