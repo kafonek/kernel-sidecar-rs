@@ -5,12 +5,11 @@ https://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-errors
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 
-#[allow(dead_code)]
 #[derive(Clone, Serialize, PartialEq, Deserialize, Debug)]
 pub struct Error {
-    ename: String,
-    evalue: String,
-    traceback: Vec<String>,
+    pub ename: String,
+    pub evalue: String,
+    pub traceback: Vec<String>,
 }
 
 impl From<Bytes> for Error {

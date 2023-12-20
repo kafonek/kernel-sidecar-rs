@@ -19,6 +19,14 @@ pub trait OutputHandler: Handler + Debug + Send + Sync {
                 let output = Output::Stream(m.content.clone());
                 self.add_cell_content(output).await;
             }
+            Response::DisplayData(m) => {
+                let output = Output::DisplayData(m.content.clone());
+                self.add_cell_content(output).await;
+            }
+            Response::Error(m) => {
+                let output = Output::Error(m.content.clone());
+                self.add_cell_content(output).await;
+            }
             Response::ClearOutput(_m) => {
                 self.clear_cell_content().await;
             }
