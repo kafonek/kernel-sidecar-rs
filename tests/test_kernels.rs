@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use indoc::indoc;
 use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
@@ -67,4 +68,25 @@ async fn test_execute_request() {
     assert_eq!(counts["execute_result"], 1);
     #[cfg(feature = "test_irkernel")]
     assert_eq!(counts["display_data"], 1);
+}
+
+#[tokio::test]
+async fn test_clear_output() {
+    let (_kernel, client) = start_kernel().await;
+
+    // send execute_request
+    let handler = MessageCountHandler::new();
+
+    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
+    let code = indoc! {r#"
+    from IPython.display import clear_output
+    
+    print("Hello, world!")
+    clear_output()
+    "#}
+    .trim();
+    let action = client.execute_request(code.to_string(), handlers).await;
+    action.await;
+    let counts = handler.counts.lock().await;
+    assert_eq!(counts["clear_output"], 1);
 }
