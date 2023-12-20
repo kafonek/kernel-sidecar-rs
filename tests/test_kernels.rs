@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use indoc::indoc;
 use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
@@ -73,6 +72,7 @@ async fn test_execute_request() {
 #[tokio::test]
 #[cfg(feature = "test_ipython")]
 async fn test_clear_output() {
+    use indoc::indoc;
     let (_kernel, client) = start_kernel().await;
 
     // send execute_request
