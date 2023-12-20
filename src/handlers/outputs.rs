@@ -8,6 +8,7 @@ pub trait OutputHandler: Handler + Debug + Send + Sync {
     async fn add_cell_content(&self, content: &HashMap<String, serde_json::Value>);
     async fn clear_cell_content(&self);
 
+    #[allow(clippy::single_match)]
     async fn handle_output(&self, msg: &Response) {
         match msg {
             Response::ExecuteResult(result) => {
