@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
 use kernel_sidecar_rs::client::Client;
-use kernel_sidecar_rs::handlers::OutputHandler;
-use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
-use kernel_sidecar_rs::jupyter::iopub_content::stream::StreamName;
+use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler, OutputHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
 use kernel_sidecar_rs::notebook::Output;
 use tokio::sync::RwLock;
@@ -81,6 +79,7 @@ struct SimpleOutputHandler {
 }
 
 impl SimpleOutputHandler {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
             output: Arc::new(RwLock::new(Vec::new())),
@@ -104,7 +103,10 @@ impl OutputHandler for SimpleOutputHandler {
 #[tokio::test]
 #[cfg(feature = "test_ipython")]
 async fn test_clear_output() {
+    // imports only used in this test, makes clippy yell when other tests run
     use indoc::indoc;
+    use kernel_sidecar_rs::jupyter::iopub_content::stream::StreamName;
+
     let (_kernel, client) = start_kernel().await;
 
     // send execute_request
