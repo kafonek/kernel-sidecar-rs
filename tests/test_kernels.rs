@@ -68,3 +68,26 @@ async fn test_execute_request() {
     #[cfg(feature = "test_irkernel")]
     assert_eq!(counts["display_data"], 1);
 }
+
+#[tokio::test]
+#[cfg(feature = "test_ipython")]
+async fn test_clear_output() {
+    use indoc::indoc;
+    let (_kernel, client) = start_kernel().await;
+
+    // send execute_request
+    let handler = MessageCountHandler::new();
+
+    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
+    let code = indoc! {r#"
+    from IPython.display import clear_output
+    
+    print("Hello, world!")
+    clear_output()
+    "#}
+    .trim();
+    let action = client.execute_request(code.to_string(), handlers).await;
+    action.await;
+    let counts = handler.counts.lock().await;
+    assert_eq!(counts.get("clear_output"), Some(&1));
+}

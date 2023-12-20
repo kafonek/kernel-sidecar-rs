@@ -31,7 +31,8 @@ impl OutputHandler for DebugOutputHandler {
 #[tokio::main]
 async fn main() {
     let silent = true;
-    let kernel = JupyterKernel::ipython(silent);
+    // let kernel = JupyterKernel::ipython(silent);
+    let kernel = JupyterKernel::deno(silent);
     let client = Client::new(kernel.connection_info.clone()).await;
     client.heartbeat().await;
     // small sleep to make sure iopub is connected,
@@ -45,7 +46,13 @@ async fn main() {
         Arc::new(DebugOutputHandler {}) as Arc<dyn Handler>,
     ];
     // let action = client.kernel_info_request(handlers).await;
-    let code = indoc! {"2 + 2"};
+    let code = indoc! {r#"
+    from IPython.display import clear_output
+
+    print("Hello, world!")
+    clear_output()
+    "#}
+    .trim();
     let action = client.execute_request(code.to_owned(), handlers).await;
 
     // Set up signal handling so that if awaiting the action hangs or there's a panic then if we

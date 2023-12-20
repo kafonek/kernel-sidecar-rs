@@ -5,6 +5,7 @@ zeromq::ZmqMessage -> WireProtocol -> Response -> Message<T> with Jupyter messag
 */
 use crate::jupyter::constants::EMPTY_DICT_BYTES;
 use crate::jupyter::header::Header;
+use crate::jupyter::iopub_content::clear_output::ClearOutput;
 use crate::jupyter::iopub_content::display_data::{DisplayData, UpdateDisplayData};
 use crate::jupyter::iopub_content::errors::Error;
 use crate::jupyter::iopub_content::execute_input::ExecuteInput;
@@ -35,6 +36,7 @@ pub enum Response {
     Stream(Message<Stream>),
     DisplayData(Message<DisplayData>),
     UpdateDisplayData(Message<UpdateDisplayData>),
+    ClearOutput(Message<ClearOutput>),
     // Errors
     Error(Message<Error>),
     // Messages I haven't modeled yet, crate is WIP
@@ -53,6 +55,7 @@ impl Response {
             Response::Stream(msg) => msg.parent_msg_id(),
             Response::DisplayData(msg) => msg.parent_msg_id(),
             Response::UpdateDisplayData(msg) => msg.parent_msg_id(),
+            Response::ClearOutput(msg) => msg.parent_msg_id(),
             Response::Error(msg) => msg.parent_msg_id(),
             Response::Unmodeled(msg) => msg.parent_msg_id(),
         }
@@ -69,6 +72,7 @@ impl Response {
             Response::Stream(msg) => msg.header.msg_type.to_owned(),
             Response::DisplayData(msg) => msg.header.msg_type.to_owned(),
             Response::UpdateDisplayData(msg) => msg.header.msg_type.to_owned(),
+            Response::ClearOutput(msg) => msg.header.msg_type.to_owned(),
             Response::Error(msg) => msg.header.msg_type.to_owned(),
             Response::Unmodeled(msg) => {
                 let real_msg_type = msg.header.msg_type.to_owned();
@@ -166,6 +170,16 @@ impl From<WireProtocol> for Response {
                     content,
                 };
                 Response::UpdateDisplayData(msg)
+            }
+            "clear_output" => {
+                let content: ClearOutput = wp.content.into();
+                let msg: Message<ClearOutput> = Message {
+                    header,
+                    parent_header,
+                    metadata: Some(metadata),
+                    content,
+                };
+                Response::ClearOutput(msg)
             }
             "error" => {
                 let content: Error = wp.content.into();
