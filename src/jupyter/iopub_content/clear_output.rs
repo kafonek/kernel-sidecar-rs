@@ -1,7 +1,6 @@
 /*
 https://jupyter-client.readthedocs.io/en/latest/messaging.html#clear-output
 */
-use std::collections::HashMap;
 
 use bytes::Bytes;
 
