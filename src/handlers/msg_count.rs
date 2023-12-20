@@ -1,39 +1,13 @@
+use std::{collections::HashMap, sync::Arc};
+
 use tokio::sync::Mutex;
 
 use crate::jupyter::response::Response;
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::sync::Arc;
 
-#[async_trait::async_trait]
-pub trait Handler: Debug + Send + Sync {
-    async fn handle(&self, msg: &Response);
-}
-
-// dbg!'s all messages handled by an Action
-#[derive(Debug)]
-pub struct DebugHandler;
-
-impl Default for DebugHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl DebugHandler {
-    pub fn new() -> Self {
-        DebugHandler {}
-    }
-}
-
-#[async_trait::async_trait]
-impl Handler for DebugHandler {
-    async fn handle(&self, msg: &Response) {
-        dbg!(msg);
-    }
-}
+use crate::handlers::Handler;
 
 // Returns a hashmap of {msg_type: count} for all messages handled by an Action
+// Primarily used in tests and introspective click-testing
 #[derive(Debug, Clone)]
 pub struct MessageCountHandler {
     pub counts: Arc<Mutex<HashMap<String, usize>>>,
