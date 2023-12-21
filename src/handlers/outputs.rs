@@ -84,6 +84,5 @@ impl OutputHandler for SimpleOutputHandler {
         // Don't do anything for sync display data in SimpleOutputHandler
         // we aren't keeping any reference to the full Notebook document in order to
         // update the display data by id outside of this "current cell" context
-        
     }
 }
