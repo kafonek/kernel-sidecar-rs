@@ -1,39 +1,12 @@
 #![cfg(feature = "test_ipython")]
 use indoc::indoc;
-use kernel_sidecar_rs::handlers::{Handler, OutputHandler};
+use kernel_sidecar_rs::handlers::{Handler, SimpleOutputHandler};
 use kernel_sidecar_rs::jupyter::iopub_content::stream::StreamName;
-use kernel_sidecar_rs::notebook::Output;
+
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 mod test_utils;
 use test_utils::start_kernel;
-
-#[derive(Debug, Clone)]
-struct SimpleOutputHandler {
-    pub output: Arc<RwLock<Vec<Output>>>,
-}
-
-impl SimpleOutputHandler {
-    pub fn new() -> Self {
-        Self {
-            output: Arc::new(RwLock::new(Vec::new())),
-        }
-    }
-}
-
-#[async_trait::async_trait]
-impl OutputHandler for SimpleOutputHandler {
-    async fn add_cell_content(&self, content: Output) {
-        self.output.write().await.push(content);
-        println!("add_cell_content");
-    }
-
-    async fn clear_cell_content(&self) {
-        self.output.write().await.clear();
-        println!("clear_cell_content");
-    }
-}
 
 #[tokio::test]
 async fn test_mixed_outputs() {

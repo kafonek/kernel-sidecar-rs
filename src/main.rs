@@ -8,38 +8,11 @@ use tokio::signal::unix::{signal, SignalKind};
 use tokio::time::sleep;
 
 use indoc::indoc;
-use kernel_sidecar_rs::notebook::Output;
+
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::RwLock;
 
-use kernel_sidecar_rs::handlers::OutputHandler;
-
-#[derive(Debug, Clone)]
-struct SimpleOutputHandler {
-    pub output: Arc<RwLock<Vec<Output>>>,
-}
-
-impl SimpleOutputHandler {
-    pub fn new() -> Self {
-        Self {
-            output: Arc::new(RwLock::new(Vec::new())),
-        }
-    }
-}
-
-#[async_trait::async_trait]
-impl OutputHandler for SimpleOutputHandler {
-    async fn add_cell_content(&self, content: Output) {
-        self.output.write().await.push(content);
-        println!("add_cell_content");
-    }
-
-    async fn clear_cell_content(&self) {
-        self.output.write().await.clear();
-        println!("clear_cell_content");
-    }
-}
+use kernel_sidecar_rs::handlers::SimpleOutputHandler;
 
 #[tokio::main]
 async fn main() {
@@ -61,7 +34,6 @@ async fn main() {
     // let action = client.kernel_info_request(handlers).await;
     let code = indoc! {r#"
     from IPython.display import clear_output
-    import time
 
 
     print("Before Clear Output")
