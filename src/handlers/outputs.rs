@@ -4,7 +4,8 @@ use crate::handlers::Handler;
 use crate::jupyter::response::Response;
 use crate::notebook::Output;
 
-use std::{fmt::Debug, sync::Arc};
+use std::fmt::Debug;
+use std::sync::Arc;
 
 #[async_trait::async_trait]
 pub trait OutputHandler: Handler + Debug + Send + Sync {
@@ -53,6 +54,12 @@ pub struct SimpleOutputHandler {
     pub output: Arc<RwLock<Vec<Output>>>,
 }
 
+impl Default for SimpleOutputHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SimpleOutputHandler {
     pub fn new() -> Self {
         Self {
@@ -77,6 +84,6 @@ impl OutputHandler for SimpleOutputHandler {
         // Don't do anything for sync display data in SimpleOutputHandler
         // we aren't keeping any reference to the full Notebook document in order to
         // update the display data by id outside of this "current cell" context
-        ()
+        
     }
 }
