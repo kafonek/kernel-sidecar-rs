@@ -4,12 +4,11 @@ https://jupyter-client.readthedocs.io/en/latest/messaging.html#display-data
 use std::collections::HashMap;
 
 use bytes::Bytes;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
-#[allow(dead_code)]
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Serialize, PartialEq)]
 pub struct Transient {
-    display_id: String,
+    pub display_id: String,
 }
 
 // If the transient field is an empty dict, deserialize it as None
@@ -28,15 +27,14 @@ where
     }
 }
 
-#[allow(dead_code)]
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Serialize, PartialEq)]
 pub struct DisplayData {
-    data: HashMap<String, serde_json::Value>,
-    metadata: serde_json::Value,
+    pub data: HashMap<String, serde_json::Value>,
+    pub metadata: serde_json::Value,
     // Dev note: serde(default) is important here, when using custom deserialize_with and Option
     // then it will throw errors when the field is missing unless default is included.
     #[serde(default, deserialize_with = "deserialize_transient")]
-    transient: Option<Transient>,
+    pub transient: Option<Transient>,
 }
 
 impl From<Bytes> for DisplayData {
@@ -46,15 +44,14 @@ impl From<Bytes> for DisplayData {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct UpdateDisplayData {
-    data: HashMap<String, serde_json::Value>,
-    metadata: serde_json::Value,
+    pub data: HashMap<String, serde_json::Value>,
+    pub metadata: serde_json::Value,
     // Dev note: serde(default) is important here, when using custom deserialize_with and Option
     // then it will throw errors when the field is missing unless default is included.
     #[serde(default, deserialize_with = "deserialize_transient")]
-    transient: Option<Transient>,
+    pub transient: Option<Transient>,
 }
 
 impl From<Bytes> for UpdateDisplayData {

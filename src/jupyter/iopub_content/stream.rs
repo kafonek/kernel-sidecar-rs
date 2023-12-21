@@ -1,21 +1,23 @@
 /*
 https://jupyter-client.readthedocs.io/en/latest/messaging.html#streams-stdout-stderr-etc
 */
+use crate::notebook::list_or_string_to_string;
 use bytes::Bytes;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Serialize, PartialEq, Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
-enum StreamName {
+pub enum StreamName {
     Stdout,
     Stderr,
 }
 
 #[allow(dead_code)]
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Serialize, PartialEq, Deserialize, Debug)]
 pub struct Stream {
-    name: StreamName,
-    text: String,
+    pub name: StreamName,
+    #[serde(deserialize_with = "list_or_string_to_string")]
+    pub text: String,
 }
 
 impl From<Bytes> for Stream {
