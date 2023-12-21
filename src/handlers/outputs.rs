@@ -16,6 +16,12 @@ pub struct SimpleOutputHandler {
     pub output: Arc<RwLock<Vec<Output>>>,
 }
 
+impl Default for SimpleOutputHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SimpleOutputHandler {
     pub fn new() -> Self {
         Self {
