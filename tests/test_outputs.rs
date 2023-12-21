@@ -80,24 +80,42 @@ async fn test_display_data() {
 #[tokio::test]
 async fn test_clear_output() {
     let (_kernel, client) = start_kernel().await;
+    let setup_action = client
+        .execute_request(
+            "from IPython.display import clear_output".to_string(),
+            vec![],
+        )
+        .await;
+    setup_action.await;
 
-    // send execute_request
-    let handler = SimpleOutputHandler::new();
+    let source1 = "print('foo'); clear_output()".to_string();
+    let source2 = "print('bar'); clear_output(wait=True)".to_string();
+    let source3 = "print('baz'); clear_output(wait=True); print('qux')".to_string();
 
-    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
-    let code = indoc! {r#"
-    from IPython.display import clear_output
-    
-    print("Before Clear Output")
-    clear_output()
-    print("After Clear Output")
-    "#}
-    .trim();
-    let action = client.execute_request(code.to_string(), handlers).await;
-    action.await;
-    let final_output = handler.output.read().await;
-    assert_eq!(final_output.len(), 1);
-    let output = &final_output[0].as_stream().unwrap();
-    assert_eq!(output.name, StreamName::Stdout);
-    assert_eq!(output.text, "After Clear Output\n");
+    let handler1 = SimpleOutputHandler::new();
+    let handler2 = SimpleOutputHandler::new();
+    let handler3 = SimpleOutputHandler::new();
+
+    let handlers1 = vec![Arc::new(handler1.clone()) as Arc<dyn Handler>];
+    let handlers2 = vec![Arc::new(handler2.clone()) as Arc<dyn Handler>];
+    let handlers3 = vec![Arc::new(handler3.clone()) as Arc<dyn Handler>];
+
+    let action1 = client.execute_request(source1, handlers1).await;
+    let action2 = client.execute_request(source2, handlers2).await;
+    let action3 = client.execute_request(source3, handlers3).await;
+    tokio::join!(action1, action2, action3);
+
+    assert_eq!(handler1.output.read().await.len(), 0);
+
+    assert_eq!(handler2.output.read().await.len(), 1);
+    assert_eq!(
+        handler2.output.read().await[0].as_stream().unwrap().text,
+        "bar\n"
+    );
+
+    assert_eq!(handler3.output.read().await.len(), 1);
+    assert_eq!(
+        handler3.output.read().await[0].as_stream().unwrap().text,
+        "qux\n"
+    );
 }
