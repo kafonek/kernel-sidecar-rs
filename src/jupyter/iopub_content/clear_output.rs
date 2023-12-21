@@ -6,10 +6,9 @@ use bytes::Bytes;
 
 use serde::Deserialize;
 
-#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct ClearOutput {
-    wait: bool,
+    pub wait: bool,
 }
 
 impl From<Bytes> for ClearOutput {
