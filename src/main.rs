@@ -14,6 +14,7 @@ use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
+    // Effectively create an in-memory Notebook, not reading from disk
     let builder = Arc::new(Mutex::new(NotebookBuilder::new()));
 
     let silent = true;
@@ -25,6 +26,7 @@ async fn main() {
     // small sleep to make sure iopub is connected,
     sleep(Duration::from_millis(50)).await;
 
+    // Add a new cell to the Notebook, it will make a random cell id. Returns Cell object
     let cell = builder.lock().await.add_code_cell("print('Hello World!')");
 
     // let debug_handler = DebugHandler::new();
@@ -36,6 +38,8 @@ async fn main() {
         Arc::new(output_handler.clone()) as Arc<dyn Handler>,
     ];
 
+    // Send the cell source code over as an execute request.
+    // The BuilderOutputHandler will update the in-memory Notebook with cell output
     let action = client.execute_request(cell.source(), handlers).await;
 
     let mut sigint = signal(SignalKind::interrupt()).expect("Failed to set up signal handler");
@@ -49,6 +53,8 @@ async fn main() {
         }
     }
     println!("Message counts: {:?}", msg_count_handler.counts);
+    // Print out in-memory Notebook cell output
     println!("Cell: {:?}", builder.lock().await.get_cell(cell.id()));
+    // Save in-memory Notebook to disk
     builder.lock().await.save("test.ipynb");
 }
