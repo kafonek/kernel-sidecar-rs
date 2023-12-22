@@ -14,7 +14,7 @@ async fn main() {
     // Create a blank in-memory Notebook, not reading existing file from disk
     let builder = NotebookBuilder::new();
 
-    // Start ipykernel child process
+    // Start ipykernel child process, silent means piping Kernel stdout to /dev/null
     let silent = true;
     let kernel = JupyterKernel::ipython(silent);
 
