@@ -7,7 +7,8 @@ use crate::jupyter::iopub_content::errors::Error;
 use crate::jupyter::iopub_content::execute_result::ExecuteResult;
 use crate::jupyter::iopub_content::stream::Stream;
 use enum_as_inner::EnumAsInner;
-use serde::{ser::SerializeMap, Deserialize, Deserializer, Serialize, Serializer};
+use serde::ser::SerializeMap;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Notebook {
@@ -21,6 +22,12 @@ pub struct Notebook {
     pub metadata: serde_json::Value,
     pub nbformat: u32,
     pub nbformat_minor: u32,
+}
+
+impl Default for Notebook {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Notebook {

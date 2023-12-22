@@ -2,15 +2,19 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
-use crate::{
-    handlers::Handler,
-    jupyter::response::Response,
-    notebook::{Cell, CodeCell, MarkdownCell, Notebook, Output},
-};
+use crate::handlers::Handler;
+use crate::jupyter::response::Response;
+use crate::notebook::{Cell, CodeCell, MarkdownCell, Notebook, Output};
 
 #[derive(Debug, Clone)]
 pub struct NotebookBuilder {
     nb: Arc<RwLock<Notebook>>,
+}
+
+impl Default for NotebookBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl NotebookBuilder {
@@ -85,14 +89,9 @@ impl NotebookBuilder {
         // Get a (cloned) Cell from the Notebook, clear its output, and replace the existing cell
         // in the owned Notebook with the modified cleared-output Cell
         let cell = self.get_cell(id).await;
-        if let Some(cell) = cell {
-            match cell {
-                Cell::Code(mut cell) => {
-                    cell.outputs = vec![];
-                    self.replace_cell(Cell::Code(cell)).await;
-                }
-                _ => {}
-            }
+        if let Some(Cell::Code(mut cell)) = cell {
+            cell.clear_output();
+            self.replace_cell(Cell::Code(cell)).await;
         }
     }
 
@@ -100,14 +99,9 @@ impl NotebookBuilder {
         // Get a (cloned) Cell from the Notebook, add the output, and replace the existing cell
         // in the owned Notebook with the modified output Cell
         let cell = self.get_cell(id).await;
-        if let Some(cell) = cell {
-            match cell {
-                Cell::Code(mut cell) => {
-                    cell.outputs.push(output);
-                    self.replace_cell(Cell::Code(cell)).await;
-                }
-                _ => {}
-            }
+        if let Some(Cell::Code(mut cell)) = cell {
+            cell.outputs.push(output);
+            self.replace_cell(Cell::Code(cell)).await;
         }
     }
 }
@@ -121,7 +115,7 @@ pub struct OutputHandler {
 impl OutputHandler {
     pub fn new(builder: NotebookBuilder, cell_id: &str) -> Self {
         Self {
-            builder: builder,
+            builder,
             cell_id: cell_id.to_owned(),
         }
     }
