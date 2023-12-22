@@ -1,50 +1,43 @@
-/*
-Mainly here for click-testing various commands and code blocks for different Kernel backends.
-*/
 use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{DebugHandler, Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
-use tokio::signal::unix::{signal, SignalKind};
-use tokio::time::sleep;
+use kernel_sidecar_rs::nb_builder::{BuilderOutputHandler, NotebookBuilder};
+use tokio::{
+    signal::unix::{signal, SignalKind},
+    sync::Mutex,
+};
 
-use indoc::indoc;
+use tokio::time::sleep;
 
 use std::sync::Arc;
 use std::time::Duration;
 
-use kernel_sidecar_rs::handlers::SimpleOutputHandler;
-
 #[tokio::main]
 async fn main() {
+    let builder = Arc::new(Mutex::new(NotebookBuilder::new()));
+
     let silent = true;
     let kernel = JupyterKernel::ipython(silent);
+
+    // start the Kernel
     let client = Client::new(kernel.connection_info.clone()).await;
     client.heartbeat().await;
     // small sleep to make sure iopub is connected,
     sleep(Duration::from_millis(50)).await;
 
-    let debug_handler = DebugHandler::new();
+    let cell = builder.lock().await.add_code_cell("print('Hello World!')");
+
+    // let debug_handler = DebugHandler::new();
     let msg_count_handler = MessageCountHandler::new();
-    let output_handler = SimpleOutputHandler::new();
+    let output_handler = BuilderOutputHandler::new(builder.clone(), cell.id());
     let handlers = vec![
-        Arc::new(debug_handler) as Arc<dyn Handler>,
+        //Arc::new(debug_handler) as Arc<dyn Handler>,
         Arc::new(msg_count_handler.clone()) as Arc<dyn Handler>,
         Arc::new(output_handler.clone()) as Arc<dyn Handler>,
     ];
-    // let action = client.kernel_info_request(handlers).await;
-    let code = indoc! {r#"
-    from IPython.display import clear_output
 
+    let action = client.execute_request(cell.source(), handlers).await;
 
-    print("Before Clear Output")
-    clear_output()
-    print("After Clear Output")
-    "#}
-    .trim();
-    let action = client.execute_request(code.to_owned(), handlers).await;
-
-    // Set up signal handling so that if awaiting the action hangs or there's a panic then if we
-    // ctrl-c to get out, the child Kernel process is cleaned up from JupyterKernel::Drop
     let mut sigint = signal(SignalKind::interrupt()).expect("Failed to set up signal handler");
 
     tokio::select! {
@@ -56,5 +49,6 @@ async fn main() {
         }
     }
     println!("Message counts: {:?}", msg_count_handler.counts);
-    println!("Output: {:?}", output_handler.output.read().await);
+    println!("Cell: {:?}", builder.lock().await.get_cell(cell.id()));
+    builder.lock().await.save("test.ipynb");
 }
