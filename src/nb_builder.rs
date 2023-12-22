@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::{
     handlers::Handler,
@@ -10,49 +10,56 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct NotebookBuilder {
-    pub nb: Notebook,
+    nb: Arc<RwLock<Notebook>>,
 }
 
 impl NotebookBuilder {
     pub fn new() -> Self {
         Self {
-            nb: Notebook::new(),
+            nb: Arc::new(RwLock::new(Notebook::new())),
         }
     }
 
     pub fn from_file(filename: &str) -> Self {
         Self {
-            nb: Notebook::from_file(filename),
+            nb: Arc::new(RwLock::new(Notebook::from_file(filename))),
         }
     }
 
-    pub fn save(&self, filename: &str) {
-        self.nb.save(filename);
+    pub fn output_handler(&self, cell_id: &str) -> OutputHandler {
+        OutputHandler::new(self.clone(), cell_id)
     }
 
-    pub fn get_cell(&self, id: &str) -> Option<&Cell> {
-        for cell in &self.nb.cells {
+    pub async fn save(&self, filename: &str) {
+        self.nb.read().await.save(filename);
+    }
+
+    pub async fn get_cell(&self, id: &str) -> Option<Cell> {
+        let nb = self.nb.read().await;
+        for cell in nb.cells.iter() {
             if cell.id() == id {
-                return Some(cell);
+                return Some(cell.clone());
             }
         }
         None
     }
 
-    pub fn get_cell_mut(&mut self, id: &str) -> Option<&mut Cell> {
-        for cell in &mut self.nb.cells {
-            if cell.id() == id {
-                return Some(cell);
+    pub async fn replace_cell(&self, cell: Cell) {
+        let mut nb = self.nb.write().await;
+        for i in 0..nb.cells.len() {
+            if nb.cells[i].id() == cell.id() {
+                nb.cells[i] = cell;
+                return;
             }
         }
-        None
     }
 
-    pub fn add_cell(&mut self, cell: Cell) {
-        self.nb.cells.push(cell);
+    pub async fn add_cell(&self, cell: Cell) {
+        let mut nb = self.nb.write().await;
+        nb.cells.push(cell);
     }
 
-    pub fn add_code_cell(&mut self, source: &str) -> Cell {
+    pub async fn add_code_cell(&self, source: &str) -> Cell {
         let cell = Cell::Code(CodeCell {
             id: uuid::Uuid::new_v4().to_string(),
             source: source.to_owned(),
@@ -60,33 +67,45 @@ impl NotebookBuilder {
             execution_count: None,
             outputs: vec![],
         });
-        self.add_cell(cell.clone());
+        self.add_cell(cell.clone()).await;
         cell
     }
 
-    pub fn add_markdown_cell(&mut self, source: &str) -> Cell {
+    pub async fn add_markdown_cell(&self, source: &str) -> Cell {
         let cell = Cell::Markdown(MarkdownCell {
             id: uuid::Uuid::new_v4().to_string(),
             source: source.to_owned(),
             metadata: serde_json::Value::Null,
         });
-        self.add_cell(cell.clone());
+        self.add_cell(cell.clone()).await;
         cell
     }
 
-    pub fn clear_cell_output(&mut self, id: &str) {
-        if let Some(cell) = self.get_cell_mut(id) {
+    pub async fn clear_cell_output(&self, id: &str) {
+        // Get a (cloned) Cell from the Notebook, clear its output, and replace the existing cell
+        // in the owned Notebook with the modified cleared-output Cell
+        let cell = self.get_cell(id).await;
+        if let Some(cell) = cell {
             match cell {
-                Cell::Code(cell) => cell.clear_output(),
+                Cell::Code(mut cell) => {
+                    cell.outputs = vec![];
+                    self.replace_cell(Cell::Code(cell)).await;
+                }
                 _ => {}
             }
         }
     }
 
-    pub fn add_cell_output(&mut self, id: &str, output: Output) {
-        if let Some(cell) = self.get_cell_mut(id) {
+    pub async fn add_cell_output(&self, id: &str, output: Output) {
+        // Get a (cloned) Cell from the Notebook, add the output, and replace the existing cell
+        // in the owned Notebook with the modified output Cell
+        let cell = self.get_cell(id).await;
+        if let Some(cell) = cell {
             match cell {
-                Cell::Code(cell) => cell.outputs.push(output),
+                Cell::Code(mut cell) => {
+                    cell.outputs.push(output);
+                    self.replace_cell(Cell::Code(cell)).await;
+                }
                 _ => {}
             }
         }
@@ -94,13 +113,13 @@ impl NotebookBuilder {
 }
 
 #[derive(Debug, Clone)]
-pub struct BuilderOutputHandler {
-    pub builder: Arc<Mutex<NotebookBuilder>>,
-    pub cell_id: String,
+pub struct OutputHandler {
+    builder: NotebookBuilder,
+    cell_id: String,
 }
 
-impl BuilderOutputHandler {
-    pub fn new(builder: Arc<Mutex<NotebookBuilder>>, cell_id: &str) -> Self {
+impl OutputHandler {
+    pub fn new(builder: NotebookBuilder, cell_id: &str) -> Self {
         Self {
             builder: builder,
             cell_id: cell_id.to_owned(),
@@ -108,19 +127,16 @@ impl BuilderOutputHandler {
     }
 
     async fn add_cell_content(&self, content: Output) {
-        self.builder
-            .lock()
-            .await
-            .add_cell_output(&self.cell_id, content);
+        self.builder.add_cell_output(&self.cell_id, content).await;
     }
 
     async fn clear_cell_content(&self) {
-        self.builder.lock().await.clear_cell_output(&self.cell_id);
+        self.builder.clear_cell_output(&self.cell_id).await;
     }
 }
 
 #[async_trait::async_trait]
-impl Handler for BuilderOutputHandler {
+impl Handler for OutputHandler {
     async fn handle(&self, msg: &Response) {
         match msg {
             Response::ExecuteResult(m) => {

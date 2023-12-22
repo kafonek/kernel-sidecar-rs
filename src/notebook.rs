@@ -48,7 +48,6 @@ impl Notebook {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumAsInner)]
 #[serde(tag = "output_type", rename_all = "snake_case")]
 pub enum Output {
-    // TODO: use the content structs from crate::jupyter::iopub_content instead of redefining?
     DisplayData(DisplayData),
     Stream(Stream),
     ExecuteResult(ExecuteResult),
