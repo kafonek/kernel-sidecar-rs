@@ -1,7 +1,7 @@
 use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{DebugHandler, Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
-use kernel_sidecar_rs::nb_builder::{NotebookBuilder};
+use kernel_sidecar_rs::nb_builder::NotebookBuilder;
 use tokio::signal::unix::{signal, SignalKind};
 
 use tokio::time::sleep;
