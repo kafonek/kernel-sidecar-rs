@@ -17,10 +17,11 @@ async fn main() {
     // Effectively create an in-memory Notebook, not reading from disk
     let builder = Arc::new(Mutex::new(NotebookBuilder::new()));
 
+    // Start ipykernel child process
     let silent = true;
     let kernel = JupyterKernel::ipython(silent);
 
-    // start the Kernel
+    // Start ZMQ connections
     let client = Client::new(kernel.connection_info.clone()).await;
     client.heartbeat().await;
     // small sleep to make sure iopub is connected,
@@ -29,8 +30,8 @@ async fn main() {
     // Add a new cell to the Notebook, it will make a random cell id. Returns Cell object
     let cell = builder.lock().await.add_code_cell("print('Hello World!')");
 
-    // let debug_handler = DebugHandler::new();
-    let msg_count_handler = MessageCountHandler::new();
+    // let debug_handler = DebugHandler::new(); // Just for debug, prints out all ZMQ messages
+    let msg_count_handler = MessageCountHandler::new(); // Just for debug, prints count of msg type
     let output_handler = BuilderOutputHandler::new(builder.clone(), cell.id());
     let handlers = vec![
         //Arc::new(debug_handler) as Arc<dyn Handler>,
