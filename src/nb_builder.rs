@@ -38,6 +38,10 @@ impl NotebookBuilder {
         self.nb.read().await.save(filename);
     }
 
+    pub async fn dumps(&self) -> String {
+        self.nb.read().await.dumps()
+    }
+
     pub async fn get_cell(&self, id: &str) -> Option<Cell> {
         let nb = self.nb.read().await;
         for cell in nb.cells.iter() {
