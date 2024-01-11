@@ -50,6 +50,10 @@ impl Notebook {
         let js = serde_json::to_string_pretty(&self).expect("Failed to serialize notebook on save");
         std::fs::write(filename, js).unwrap();
     }
+
+    pub fn dumps(&self) -> String {
+        serde_json::to_string_pretty(&self).expect("Failed to serialize notebook on save")
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumAsInner)]
