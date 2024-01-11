@@ -12,5 +12,5 @@ pub use outputs::SimpleOutputHandler;
 
 #[async_trait::async_trait]
 pub trait Handler: Debug + Send + Sync {
-    async fn handle(&self, msg: &Response);
+    async fn handle(&mut self, msg: &Response);
 }

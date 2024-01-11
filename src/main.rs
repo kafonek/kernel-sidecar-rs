@@ -1,18 +1,20 @@
-use kernel_sidecar_rs::client::Client;
 use kernel_sidecar_rs::handlers::{DebugHandler, Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
-use kernel_sidecar_rs::nb_builder::NotebookBuilder;
-use tokio::signal::unix::{signal, SignalKind};
-
+use kernel_sidecar_rs::notebook::Notebook;
+use kernel_sidecar_rs::{client::Client, handlers::outputs::OutputHandler};
 use tokio::time::sleep;
+use tokio::{
+    signal::unix::{signal, SignalKind},
+    sync::Mutex,
+};
 
 use std::sync::Arc;
 use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
-    // Create a blank in-memory Notebook, not reading existing file from disk
-    let builder = NotebookBuilder::new();
+    // Create blank in-memory Notebook
+    let nb = Arc::new(Mutex::new(Notebook::new()));
 
     // Start ipykernel child process, silent means piping Kernel stdout to /dev/null
     let silent = true;
@@ -27,18 +29,21 @@ async fn main() {
     // Add a new cell to the Notebook. Assigns random cell id. Returns cloned Cell object.
     // If thinking ahead towards CRDT's, could think of this as "dirty" (not synced to others)
     // but we're only using it to send source code in execute request, no big deal.
-    let cell = builder.add_code_cell("2 + 3").await;
+    let cell = nb.lock().await.add_code_cell("2 + 3").await;
+    println!("Notebook: {:?}", nb);
 
     // Just for debug, prints out all ZMQ messages
-    let debug_handler = DebugHandler::new();
+    let debug_handler = Arc::new(Mutex::new(DebugHandler::new()));
     // Just for debug, prints count of msg types at the end of script
-    let msg_count_handler = MessageCountHandler::new();
+    let msg_count_handler = Arc::new(Mutex::new(MessageCountHandler::new()));
     // Updates in-memory builder Notebook with cell output
-    let output_handler = builder.output_handler(cell.id());
-    let handlers = vec![
-        Arc::new(debug_handler) as Arc<dyn Handler>,
-        Arc::new(msg_count_handler.clone()) as Arc<dyn Handler>,
-        Arc::new(output_handler) as Arc<dyn Handler>,
+    let output_handler = OutputHandler::new(nb.clone(), cell.id());
+    let output_handler_arc = Arc::new(Mutex::new(output_handler));
+
+    let handlers: Vec<Arc<Mutex<dyn Handler>>> = vec![
+        debug_handler.clone(),
+        msg_count_handler.clone(),
+        output_handler_arc.clone(),
     ];
 
     // Send the cell source code over as an execute request, every ZMQ response gets processed
@@ -58,9 +63,13 @@ async fn main() {
         }
     }
     // Debug: print count of ZMQ response message types
-    println!("Message counts: {:?}", msg_count_handler.counts);
+    println!(
+        "Message counts: {:?}",
+        msg_count_handler.lock().await.counts
+    );
     // Print out in-memory Notebook cell (source and outputs)
-    println!("Cell: {:?}", builder.get_cell(cell.id()).await);
+    println!("Cell: {:?}", nb.lock().await.get_cell(cell.id()).await);
+    println!("Notebook: {:?}", nb);
     // See what it looks like when saving in-memory Notebook to disk (serde for serialization)
-    builder.save("test.ipynb").await;
+    nb.lock().await.save("test.ipynb");
 }

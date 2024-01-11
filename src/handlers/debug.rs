@@ -20,7 +20,7 @@ impl DebugHandler {
 
 #[async_trait::async_trait]
 impl Handler for DebugHandler {
-    async fn handle(&self, msg: &Response) {
+    async fn handle(&mut self, msg: &Response) {
         dbg!(msg);
     }
 }

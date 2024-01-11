@@ -2,13 +2,16 @@
 Models a Notebook document. https://ipython.org/ipython-doc/3/notebook/nbformat.html
 */
 
-use crate::jupyter::iopub_content::display_data::DisplayData;
+use std::sync::Arc;
+
 use crate::jupyter::iopub_content::errors::Error;
 use crate::jupyter::iopub_content::execute_result::ExecuteResult;
 use crate::jupyter::iopub_content::stream::Stream;
+use crate::{handlers::outputs::OutputHandler, jupyter::iopub_content::display_data::DisplayData};
 use enum_as_inner::EnumAsInner;
 use serde::ser::SerializeMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use tokio::sync::Mutex;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Notebook {
@@ -54,6 +57,50 @@ impl Notebook {
     pub fn dumps(&self) -> String {
         serde_json::to_string_pretty(&self).expect("Failed to serialize notebook on save")
     }
+
+    pub async fn get_cell(&self, id: &str) -> Option<&Cell> {
+        for cell in self.cells.iter() {
+            if cell.id() == id {
+                return Some(cell);
+            }
+        }
+        None
+    }
+
+    pub async fn get_mut_cell(&mut self, id: &str) -> Option<&mut Cell> {
+        for cell in self.cells.iter_mut() {
+            if cell.id() == id {
+                return Some(cell);
+            }
+        }
+        None
+    }
+
+    pub async fn add_cell(&mut self, cell: Cell) {
+        self.cells.push(cell);
+    }
+
+    pub async fn add_code_cell(&mut self, source: &str) -> Cell {
+        let cell = Cell::Code(CodeCell {
+            id: uuid::Uuid::new_v4().to_string(),
+            source: source.to_owned(),
+            metadata: serde_json::Value::Null,
+            execution_count: None,
+            outputs: vec![],
+        });
+        self.cells.push(cell.clone());
+        cell
+    }
+
+    pub async fn add_markdown_cell(&mut self, source: &str) -> Cell {
+        let cell = Cell::Markdown(MarkdownCell {
+            id: uuid::Uuid::new_v4().to_string(),
+            source: source.to_owned(),
+            metadata: serde_json::Value::Null,
+        });
+        self.cells.push(cell.clone());
+        cell
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumAsInner)]
@@ -97,6 +144,20 @@ impl Cell {
             Cell::Raw(cell) => &cell.metadata,
         }
     }
+
+    pub fn add_output(&mut self, output: Output) {
+        match self {
+            Cell::Code(cell) => cell.add_output(output),
+            _ => {}
+        }
+    }
+
+    pub fn clear_output(&mut self) {
+        match self {
+            Cell::Code(cell) => cell.clear_output(),
+            _ => {}
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -115,6 +176,10 @@ pub struct CodeCell {
 }
 
 impl CodeCell {
+    pub fn add_output(&mut self, output: Output) {
+        self.outputs.push(output);
+    }
+
     pub fn clear_output(&mut self) {
         self.outputs = vec![];
     }

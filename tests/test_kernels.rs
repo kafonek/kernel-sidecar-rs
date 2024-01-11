@@ -4,17 +4,18 @@ use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
 
 mod test_utils;
 use test_utils::start_kernel;
+use tokio::sync::Mutex;
 
 #[tokio::test]
 async fn test_kernel_info() {
     let (_kernel, client) = start_kernel().await;
 
     // send kernel_info_request
-    let handler = MessageCountHandler::new();
-    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
+    let handler = Arc::new(Mutex::new(MessageCountHandler::new()));
+    let handlers: Vec<Arc<Mutex<dyn Handler>>> = vec![handler.clone()];
     let action = client.kernel_info_request(handlers).await;
     action.await;
-    let counts = handler.counts.lock().await;
+    let counts = &handler.lock().await.counts;
     assert_eq!(counts["status"], 2);
     assert_eq!(counts["kernel_info_reply"], 1);
 }
@@ -24,12 +25,12 @@ async fn test_execute_request() {
     let (_kernel, client) = start_kernel().await;
 
     // send execute_request
-    let handler = MessageCountHandler::new();
+    let handler = Arc::new(Mutex::new(MessageCountHandler::new()));
+    let handlers: Vec<Arc<Mutex<dyn Handler>>> = vec![handler.clone()];
 
-    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
     let action = client.execute_request("2 + 2".to_string(), handlers).await;
     action.await;
-    let counts = handler.counts.lock().await;
+    let counts = &handler.lock().await.counts;
     // All kernel types should give status busy -> status idle -> execute reply
     assert_eq!(counts["status"], 2);
     assert_eq!(counts["execute_reply"], 1);
