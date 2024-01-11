@@ -1,12 +1,11 @@
+use kernel_sidecar_rs::client::Client;
+use kernel_sidecar_rs::handlers::outputs::OutputHandler;
 use kernel_sidecar_rs::handlers::{DebugHandler, Handler, MessageCountHandler};
 use kernel_sidecar_rs::kernels::JupyterKernel;
 use kernel_sidecar_rs::notebook::Notebook;
-use kernel_sidecar_rs::{client::Client, handlers::outputs::OutputHandler};
+use tokio::signal::unix::{signal, SignalKind};
+use tokio::sync::Mutex;
 use tokio::time::sleep;
-use tokio::{
-    signal::unix::{signal, SignalKind},
-    sync::Mutex,
-};
 
 use std::sync::Arc;
 use std::time::Duration;

@@ -1,9 +1,8 @@
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::{Mutex};
 
 use crate::handlers::Handler;
 use crate::jupyter::response::Response;
-use crate::notebook::Notebook;
-use crate::notebook::Output;
+use crate::notebook::{Notebook, Output};
 
 use std::fmt::Debug;
 use std::sync::Arc;

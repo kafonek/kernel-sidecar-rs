@@ -2,16 +2,13 @@
 Models a Notebook document. https://ipython.org/ipython-doc/3/notebook/nbformat.html
 */
 
-use std::sync::Arc;
-
+use crate::jupyter::iopub_content::display_data::DisplayData;
 use crate::jupyter::iopub_content::errors::Error;
 use crate::jupyter::iopub_content::execute_result::ExecuteResult;
 use crate::jupyter::iopub_content::stream::Stream;
-use crate::{handlers::outputs::OutputHandler, jupyter::iopub_content::display_data::DisplayData};
 use enum_as_inner::EnumAsInner;
 use serde::ser::SerializeMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use tokio::sync::Mutex;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Notebook {
@@ -146,16 +143,14 @@ impl Cell {
     }
 
     pub fn add_output(&mut self, output: Output) {
-        match self {
-            Cell::Code(cell) => cell.add_output(output),
-            _ => {}
+        if let Cell::Code(cell) = self {
+            cell.add_output(output);
         }
     }
 
     pub fn clear_output(&mut self) {
-        match self {
-            Cell::Code(cell) => cell.clear_output(),
-            _ => {}
+        if let Cell::Code(cell) = self {
+            cell.clear_output();
         }
     }
 }
