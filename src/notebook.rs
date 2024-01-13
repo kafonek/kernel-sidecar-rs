@@ -54,6 +54,40 @@ impl Notebook {
     pub fn dumps(&self) -> String {
         serde_json::to_string_pretty(&self).expect("Failed to serialize notebook on save")
     }
+
+    pub fn get_cell(&self, id: &str) -> Option<&Cell> {
+        self.cells.iter().find(|&cell| cell.id() == id)
+    }
+
+    pub fn get_mut_cell(&mut self, id: &str) -> Option<&mut Cell> {
+        self.cells.iter_mut().find(|cell| cell.id() == id)
+    }
+
+    pub fn add_cell(&mut self, cell: Cell) {
+        self.cells.push(cell);
+    }
+
+    pub fn add_code_cell(&mut self, source: &str) -> Cell {
+        let cell = Cell::Code(CodeCell {
+            id: uuid::Uuid::new_v4().to_string(),
+            source: source.to_owned(),
+            metadata: serde_json::Value::Null,
+            execution_count: None,
+            outputs: vec![],
+        });
+        self.cells.push(cell.clone());
+        cell
+    }
+
+    pub fn add_markdown_cell(&mut self, source: &str) -> Cell {
+        let cell = Cell::Markdown(MarkdownCell {
+            id: uuid::Uuid::new_v4().to_string(),
+            source: source.to_owned(),
+            metadata: serde_json::Value::Null,
+        });
+        self.cells.push(cell.clone());
+        cell
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumAsInner)]
@@ -82,11 +116,19 @@ impl Cell {
         }
     }
 
-    pub fn source(&self) -> String {
+    pub fn get_source(&self) -> String {
         match self {
             Cell::Code(cell) => cell.source.to_string(),
             Cell::Markdown(cell) => cell.source.to_string(),
             Cell::Raw(cell) => cell.source.to_string(),
+        }
+    }
+
+    pub fn set_source(&mut self, source: &str) {
+        match self {
+            Cell::Code(cell) => cell.source = source.to_string(),
+            Cell::Markdown(cell) => cell.source = source.to_string(),
+            Cell::Raw(cell) => cell.source = source.to_string(),
         }
     }
 
@@ -95,6 +137,18 @@ impl Cell {
             Cell::Code(cell) => &cell.metadata,
             Cell::Markdown(cell) => &cell.metadata,
             Cell::Raw(cell) => &cell.metadata,
+        }
+    }
+
+    pub fn add_output(&mut self, output: Output) {
+        if let Cell::Code(cell) = self {
+            cell.add_output(output);
+        }
+    }
+
+    pub fn clear_output(&mut self) {
+        if let Cell::Code(cell) = self {
+            cell.clear_output();
         }
     }
 }
@@ -115,6 +169,10 @@ pub struct CodeCell {
 }
 
 impl CodeCell {
+    pub fn add_output(&mut self, output: Output) {
+        self.outputs.push(output);
+    }
+
     pub fn clear_output(&mut self) {
         self.outputs = vec![];
     }

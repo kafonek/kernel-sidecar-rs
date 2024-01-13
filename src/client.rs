@@ -39,7 +39,7 @@ use std::collections::HashMap;
 
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::{mpsc, Notify, RwLock};
+use tokio::sync::{mpsc, Mutex, Notify, RwLock};
 use tokio::time::sleep;
 use zeromq::{DealerSocket, ReqSocket, Socket, SocketRecv, SocketSend, SubSocket, ZmqMessage};
 
@@ -141,7 +141,11 @@ impl Client {
     // Creates an Action from a request + handlers, serializes the request to be sent over ZMQ,
     // sends over shell channel, and registers the request header msg_id in the Actions hashmap
     // so that all response messages can get routed to the appropriate Action handlers
-    async fn send_request(&self, request: Request, handlers: Vec<Arc<dyn Handler>>) -> Action {
+    async fn send_request(
+        &self,
+        request: Request,
+        handlers: Vec<Arc<Mutex<dyn Handler>>>,
+    ) -> Action {
         let (msg_tx, msg_rx) = mpsc::channel(100);
         let action = Action::new(request, handlers, msg_rx);
         let msg_id = action.request.msg_id();
@@ -152,12 +156,16 @@ impl Client {
         action
     }
 
-    pub async fn kernel_info_request(&self, handlers: Vec<Arc<dyn Handler>>) -> Action {
+    pub async fn kernel_info_request(&self, handlers: Vec<Arc<Mutex<dyn Handler>>>) -> Action {
         let request = KernelInfoRequest::new();
         self.send_request(request.into(), handlers).await
     }
 
-    pub async fn execute_request(&self, code: String, handlers: Vec<Arc<dyn Handler>>) -> Action {
+    pub async fn execute_request(
+        &self,
+        code: String,
+        handlers: Vec<Arc<Mutex<dyn Handler>>>,
+    ) -> Action {
         let request = ExecuteRequest::new(code);
         self.send_request(request.into(), handlers).await
     }

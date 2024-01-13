@@ -2,6 +2,7 @@
 use indoc::indoc;
 use kernel_sidecar_rs::handlers::{Handler, SimpleOutputHandler};
 use kernel_sidecar_rs::jupyter::iopub_content::stream::StreamName;
+use tokio::sync::Mutex;
 
 use std::sync::Arc;
 
@@ -14,9 +15,9 @@ async fn test_mixed_outputs() {
     let (_kernel, client) = start_kernel().await;
 
     // send execute_request
-    let handler = SimpleOutputHandler::new();
+    let handler = Arc::new(Mutex::new(SimpleOutputHandler::new()));
+    let handlers: Vec<Arc<Mutex<dyn Handler>>> = vec![handler.clone()];
 
-    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
     let code = indoc! {r#"
     print("foo")
     print("bar")
@@ -25,7 +26,7 @@ async fn test_mixed_outputs() {
     .trim();
     let action = client.execute_request(code.to_string(), handlers).await;
     action.await;
-    let final_output = handler.output.read().await;
+    let final_output = &handler.lock().await.output;
     assert_eq!(final_output.len(), 2);
     let stream_output = &final_output[0].as_stream().unwrap();
     assert_eq!(stream_output.name, StreamName::Stdout);
@@ -39,16 +40,15 @@ async fn test_error_output() {
     let (_kernel, client) = start_kernel().await;
 
     // send execute_request
-    let handler = SimpleOutputHandler::new();
-
-    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
+    let handler = Arc::new(Mutex::new(SimpleOutputHandler::new()));
+    let handlers: Vec<Arc<Mutex<dyn Handler>>> = vec![handler.clone()];
     let code = indoc! {r#"
     1 / 0
     "#}
     .trim();
     let action = client.execute_request(code.to_string(), handlers).await;
     action.await;
-    let final_output = handler.output.read().await;
+    let final_output = &handler.lock().await.output;
     assert_eq!(final_output.len(), 1);
     let error_output = &final_output[0].as_error().unwrap();
     assert_eq!(error_output.ename, "ZeroDivisionError");
@@ -60,9 +60,8 @@ async fn test_display_data() {
     let (_kernel, client) = start_kernel().await;
 
     // send execute_request
-    let handler = SimpleOutputHandler::new();
-
-    let handlers = vec![Arc::new(handler.clone()) as Arc<dyn Handler>];
+    let handler = Arc::new(Mutex::new(SimpleOutputHandler::new()));
+    let handlers: Vec<Arc<Mutex<dyn Handler>>> = vec![handler.clone()];
     let code = indoc! {r#"
     from IPython.display import display
     
@@ -71,7 +70,7 @@ async fn test_display_data() {
     .trim();
     let action = client.execute_request(code.to_string(), handlers).await;
     action.await;
-    let final_output = handler.output.read().await;
+    let final_output = &handler.lock().await.output;
     assert_eq!(final_output.len(), 1);
     let display_data = &final_output[0].as_display_data().unwrap();
     assert_eq!(display_data.data["text/plain"], "'foo'");
@@ -92,30 +91,30 @@ async fn test_clear_output() {
     let source2 = "print('bar'); clear_output(wait=True)".to_string();
     let source3 = "print('baz'); clear_output(wait=True); print('qux')".to_string();
 
-    let handler1 = SimpleOutputHandler::new();
-    let handler2 = SimpleOutputHandler::new();
-    let handler3 = SimpleOutputHandler::new();
+    let handler1 = Arc::new(Mutex::new(SimpleOutputHandler::new()));
+    let handler2 = Arc::new(Mutex::new(SimpleOutputHandler::new()));
+    let handler3 = Arc::new(Mutex::new(SimpleOutputHandler::new()));
 
-    let handlers1 = vec![Arc::new(handler1.clone()) as Arc<dyn Handler>];
-    let handlers2 = vec![Arc::new(handler2.clone()) as Arc<dyn Handler>];
-    let handlers3 = vec![Arc::new(handler3.clone()) as Arc<dyn Handler>];
+    let handlers1: Vec<Arc<Mutex<dyn Handler>>> = vec![handler1.clone()];
+    let handlers2: Vec<Arc<Mutex<dyn Handler>>> = vec![handler2.clone()];
+    let handlers3: Vec<Arc<Mutex<dyn Handler>>> = vec![handler3.clone()];
 
     let action1 = client.execute_request(source1, handlers1).await;
     let action2 = client.execute_request(source2, handlers2).await;
     let action3 = client.execute_request(source3, handlers3).await;
     tokio::join!(action1, action2, action3);
 
-    assert_eq!(handler1.output.read().await.len(), 0);
+    assert_eq!(handler1.lock().await.output.len(), 0);
 
-    assert_eq!(handler2.output.read().await.len(), 1);
+    assert_eq!(handler2.lock().await.output.len(), 1);
     assert_eq!(
-        handler2.output.read().await[0].as_stream().unwrap().text,
+        handler2.lock().await.output[0].as_stream().unwrap().text,
         "bar\n"
     );
 
-    assert_eq!(handler3.output.read().await.len(), 1);
+    assert_eq!(handler3.lock().await.output.len(), 1);
     assert_eq!(
-        handler3.output.read().await[0].as_stream().unwrap().text,
+        handler3.lock().await.output[0].as_stream().unwrap().text,
         "qux\n"
     );
 }

@@ -1,7 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
-
-use tokio::sync::Mutex;
 
 use crate::jupyter::response::Response;
 
@@ -11,7 +8,7 @@ use crate::handlers::Handler;
 // Primarily used in tests and introspective click-testing
 #[derive(Debug, Clone)]
 pub struct MessageCountHandler {
-    pub counts: Arc<Mutex<HashMap<String, usize>>>,
+    pub counts: HashMap<String, usize>,
 }
 
 impl Default for MessageCountHandler {
@@ -23,17 +20,16 @@ impl Default for MessageCountHandler {
 impl MessageCountHandler {
     pub fn new() -> Self {
         MessageCountHandler {
-            counts: Arc::new(Mutex::new(HashMap::new())),
+            counts: HashMap::new(),
         }
     }
 }
 
 #[async_trait::async_trait]
 impl Handler for MessageCountHandler {
-    async fn handle(&self, msg: &Response) {
-        let mut counts = self.counts.lock().await;
+    async fn handle(&mut self, msg: &Response) {
         let msg_type = msg.msg_type();
-        let count = counts.entry(msg_type).or_insert(0);
+        let count = self.counts.entry(msg_type).or_insert(0);
         *count += 1;
     }
 }
