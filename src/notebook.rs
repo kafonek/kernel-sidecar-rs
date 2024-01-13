@@ -56,21 +56,11 @@ impl Notebook {
     }
 
     pub fn get_cell(&self, id: &str) -> Option<&Cell> {
-        for cell in self.cells.iter() {
-            if cell.id() == id {
-                return Some(cell);
-            }
-        }
-        None
+        self.cells.iter().find(|&cell| cell.id() == id)
     }
 
     pub fn get_mut_cell(&mut self, id: &str) -> Option<&mut Cell> {
-        for cell in self.cells.iter_mut() {
-            if cell.id() == id {
-                return Some(cell);
-            }
-        }
-        None
+        self.cells.iter_mut().find(|cell| cell.id() == id)
     }
 
     pub fn add_cell(&mut self, cell: Cell) {
