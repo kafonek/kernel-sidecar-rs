@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use kernel_sidecar_rs::handlers::{Handler, MessageCountHandler};
+use kernel_sidecar::handlers::{Handler, MessageCountHandler};
 
 mod test_utils;
 use test_utils::start_kernel;
