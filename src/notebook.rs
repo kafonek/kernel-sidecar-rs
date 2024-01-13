@@ -55,7 +55,7 @@ impl Notebook {
         serde_json::to_string_pretty(&self).expect("Failed to serialize notebook on save")
     }
 
-    pub async fn get_cell(&self, id: &str) -> Option<&Cell> {
+    pub fn get_cell(&self, id: &str) -> Option<&Cell> {
         for cell in self.cells.iter() {
             if cell.id() == id {
                 return Some(cell);
@@ -64,7 +64,7 @@ impl Notebook {
         None
     }
 
-    pub async fn get_mut_cell(&mut self, id: &str) -> Option<&mut Cell> {
+    pub fn get_mut_cell(&mut self, id: &str) -> Option<&mut Cell> {
         for cell in self.cells.iter_mut() {
             if cell.id() == id {
                 return Some(cell);
@@ -73,11 +73,11 @@ impl Notebook {
         None
     }
 
-    pub async fn add_cell(&mut self, cell: Cell) {
+    pub fn add_cell(&mut self, cell: Cell) {
         self.cells.push(cell);
     }
 
-    pub async fn add_code_cell(&mut self, source: &str) -> Cell {
+    pub fn add_code_cell(&mut self, source: &str) -> Cell {
         let cell = Cell::Code(CodeCell {
             id: uuid::Uuid::new_v4().to_string(),
             source: source.to_owned(),
@@ -89,7 +89,7 @@ impl Notebook {
         cell
     }
 
-    pub async fn add_markdown_cell(&mut self, source: &str) -> Cell {
+    pub fn add_markdown_cell(&mut self, source: &str) -> Cell {
         let cell = Cell::Markdown(MarkdownCell {
             id: uuid::Uuid::new_v4().to_string(),
             source: source.to_owned(),
@@ -126,11 +126,19 @@ impl Cell {
         }
     }
 
-    pub fn source(&self) -> String {
+    pub fn get_source(&self) -> String {
         match self {
             Cell::Code(cell) => cell.source.to_string(),
             Cell::Markdown(cell) => cell.source.to_string(),
             Cell::Raw(cell) => cell.source.to_string(),
+        }
+    }
+
+    pub fn set_source(&mut self, source: &str) {
+        match self {
+            Cell::Code(cell) => cell.source = source.to_string(),
+            Cell::Markdown(cell) => cell.source = source.to_string(),
+            Cell::Raw(cell) => cell.source = source.to_string(),
         }
     }
 

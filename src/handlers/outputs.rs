@@ -1,4 +1,4 @@
-use tokio::sync::{Mutex};
+use tokio::sync::Mutex;
 
 use crate::handlers::Handler;
 use crate::jupyter::response::Response;
@@ -26,14 +26,14 @@ impl OutputHandler {
 
     pub async fn add_output(&mut self, content: Output) {
         let mut nb = self.nb.lock().await;
-        if let Some(cell) = nb.get_mut_cell(&self.cell_id).await {
+        if let Some(cell) = nb.get_mut_cell(&self.cell_id) {
             cell.add_output(content);
         }
     }
 
     pub async fn clear_output(&mut self) {
         let mut nb = self.nb.lock().await;
-        if let Some(cell) = nb.get_mut_cell(&self.cell_id).await {
+        if let Some(cell) = nb.get_mut_cell(&self.cell_id) {
             cell.clear_output();
         }
     }

@@ -28,7 +28,7 @@ async fn main() {
     // Add a new cell to the Notebook. Assigns random cell id. Returns cloned Cell object.
     // If thinking ahead towards CRDT's, could think of this as "dirty" (not synced to others)
     // but we're only using it to send source code in execute request, no big deal.
-    let cell = nb.lock().await.add_code_cell("2 + 3").await;
+    let cell = nb.lock().await.add_code_cell("2 + 3");
     println!("Notebook: {:?}", nb);
 
     // Just for debug, prints out all ZMQ messages
@@ -47,7 +47,7 @@ async fn main() {
 
     // Send the cell source code over as an execute request, every ZMQ response gets processed
     // by all three handlers sequentially
-    let action = client.execute_request(cell.source(), handlers).await;
+    let action = client.execute_request(cell.get_source(), handlers).await;
 
     // Signal handling to support ctrl-c in the off chance something goes wrong and this script
     // never completes (missing expected shell/iopub messages for status or execute_reply?)
@@ -67,7 +67,7 @@ async fn main() {
         msg_count_handler.lock().await.counts
     );
     // Print out in-memory Notebook cell (source and outputs)
-    println!("Cell: {:?}", nb.lock().await.get_cell(cell.id()).await);
+    println!("Cell: {:?}", nb.lock().await.get_cell(cell.id()));
     println!("Notebook: {:?}", nb);
     // See what it looks like when saving in-memory Notebook to disk (serde for serialization)
     nb.lock().await.save("test.ipynb");
