@@ -1,5 +1,5 @@
-use kernel_sidecar_rs::client::Client;
-use kernel_sidecar_rs::kernels::JupyterKernel;
+use kernel_sidecar::client::Client;
+use kernel_sidecar::kernels::JupyterKernel;
 
 // Start Kernel (type based on feature flags) and wait for ZMQ channels to come up
 pub async fn start_kernel() -> (JupyterKernel, Client) {

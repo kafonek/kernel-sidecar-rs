@@ -1,4 +1,4 @@
-use kernel_sidecar_rs::notebook::Notebook;
+use kernel_sidecar::notebook::Notebook;
 
 #[test]
 fn test_notebook_structure() {

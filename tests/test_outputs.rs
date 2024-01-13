@@ -1,7 +1,7 @@
 #![cfg(feature = "test_ipython")]
 use indoc::indoc;
-use kernel_sidecar_rs::handlers::{Handler, SimpleOutputHandler};
-use kernel_sidecar_rs::jupyter::iopub_content::stream::StreamName;
+use kernel_sidecar::handlers::{Handler, SimpleOutputHandler};
+use kernel_sidecar::jupyter::iopub_content::stream::StreamName;
 use tokio::sync::Mutex;
 
 use std::sync::Arc;
